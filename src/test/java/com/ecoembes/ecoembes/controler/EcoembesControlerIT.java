@@ -2,6 +2,8 @@ package com.ecoembes.ecoembes.controler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ecoembes.ecoembes.service.DumpsterService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -25,6 +27,21 @@ class EcoembesControlerIT {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private DumpsterService dumpsterService;
+
+    @BeforeEach
+    void setUp() {
+        // Create some test dumpsters with usage history
+        var dumpster1 = dumpsterService.createNewDumpster("Calle Mayor 1, 48001", 500.0);
+        var dumpster2 = dumpsterService.createNewDumpster("Plaza Nueva 5, 48001", 1000.0);
+
+        // Add usage history
+        dumpsterService.addUsageHistory(dumpster1.dumpsterID(), LocalDate.now().minusDays(2), "green", 50);
+        dumpsterService.addUsageHistory(dumpster1.dumpsterID(), LocalDate.now().minusDays(1), "orange", 250);
+        dumpsterService.addUsageHistory(dumpster2.dumpsterID(), LocalDate.now().minusDays(1), "red", 900);
+    }
 
     private String loginAndGetToken(String email, String password) throws Exception {
         String payload = "{" +
@@ -73,25 +90,28 @@ class EcoembesControlerIT {
 
         // Create new dumpster
         String createPayload = "{" +
-                "\"location\":\"Test Street 1\"," +
+                "\"location\":\"Test Street 1, 48001\"," +
                 "\"initialCapacity\":100}";
-        mockMvc.perform(post("/api/v1/dumpsters")
+        String createResponse = mockMvc.perform(post("/api/v1/dumpsters")
                         .header("Authorization", token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createPayload))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.dumpsterID", startsWith("D-")))
-                .andExpect(jsonPath("$.location", is("Test Street 1")))
+                .andExpect(jsonPath("$.location", is("Test Street 1, 48001")))
                 .andExpect(jsonPath("$.fillLevel", not(emptyOrNullString())))
-                .andExpect(jsonPath("$.containersNumber", isA(Number.class)));
+                .andExpect(jsonPath("$.containersNumber", isA(Number.class)))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
 
-        // Status endpoint
+        // Status endpoint - should return created dumpsters
         mockMvc.perform(get("/api/v1/dumpsters/status")
                         .header("Authorization", token)
                         .param("postalCode", "48001")
                         .param("date", LocalDate.now().toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(3)))) // At least 2 from setUp + 1 created
                 .andExpect(jsonPath("$[0].dumpsterID", not(emptyOrNullString())));
 
         // Usage endpoint
@@ -100,7 +120,7 @@ class EcoembesControlerIT {
                         .param("startDate", LocalDate.now().minusDays(3).toString())
                         .param("endDate", LocalDate.now().toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))));
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(3)))); // Usage history from setUp
     }
 
     @Test
