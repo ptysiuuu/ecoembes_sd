@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * In-memory session storage for logged-in users.
  * Thread-safe using ConcurrentHashMap.
- * Note: All sessions lost on server restart - fine for prototype.
+ * Note: All sessions lost on server restart.
  */
 @Component
 public class SessionManager {

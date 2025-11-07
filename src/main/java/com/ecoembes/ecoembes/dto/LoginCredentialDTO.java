@@ -5,8 +5,6 @@ import jakarta.validation.constraints.NotEmpty;
 
 /**
  * DTO for receiving login credentials.
- * Based on 'LoginCredentialDTO' from the class diagram.
- * Implemented as a Java Record.
  */
 public record LoginCredentialDTO(
         @NotEmpty(message = "Email cannot be empty")

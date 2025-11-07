@@ -5,8 +5,6 @@ import jakarta.validation.constraints.NotEmpty;
 
 /**
  * DTO for creating a new dumpster.
- * Based on 'NewDumpsterDTO' from the class diagram.
- * Implemented as a Java Record.
  */
 public record NewDumpsterDTO(
         @NotEmpty(message = "Location cannot be empty")
