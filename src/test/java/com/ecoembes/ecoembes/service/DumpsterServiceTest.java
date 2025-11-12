@@ -1,59 +1,80 @@
 package com.ecoembes.ecoembes.service;
 
+import com.ecoembes.ecoembes.domain.Dumpster;
+import com.ecoembes.ecoembes.domain.Usage;
 import com.ecoembes.ecoembes.dto.DumpsterStatusDTO;
 import com.ecoembes.ecoembes.dto.DumpsterUsageDTO;
+import com.ecoembes.ecoembes.repository.DumpsterRepository;
+import com.ecoembes.ecoembes.repository.UsageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class DumpsterServiceTest {
 
-    private DumpsterService dumpsterService;
+    @Mock
+    private DumpsterRepository dumpsterRepository;
 
-    @BeforeEach
-    void setUp() {
-        dumpsterService = new DumpsterService();
-    }
+    @Mock
+    private UsageRepository usageRepository;
+
+    @InjectMocks
+    private DumpsterService dumpsterService;
 
     @Test
     void createNewDumpster_returnsValidDTO() {
-        DumpsterStatusDTO result = dumpsterService.createNewDumpster("Test Location", 100.0);
+        Dumpster mockDumpster = new Dumpster("D-12345678", "Test Location 48001", "48001", 100.0);
+        when(dumpsterRepository.save(any(Dumpster.class))).thenReturn(mockDumpster);
+
+        DumpsterStatusDTO result = dumpsterService.createNewDumpster("Test Location 48001", 100.0);
 
         assertNotNull(result);
         assertTrue(result.dumpsterID().startsWith("D-"));
-        assertEquals("Test Location", result.location());
+        assertEquals("Test Location 48001", result.location());
         assertEquals("green", result.fillLevel());
         assertEquals(0, result.containersNumber());
+        verify(dumpsterRepository, times(1)).save(any(Dumpster.class));
     }
 
     @Test
     void getDumpsterStatus_returnsCreatedDumpsters() {
-        // Create dumpsters first
-        dumpsterService.createNewDumpster("Calle Mayor 1, 48001", 100.0);
-        dumpsterService.createNewDumpster("Plaza Nueva 5, 48001", 200.0);
-        dumpsterService.createNewDumpster("Avenida 10, 28001", 300.0);
+        Dumpster d1 = new Dumpster("D-111", "Calle Mayor 1, 48001", "48001", 100.0);
+        Dumpster d2 = new Dumpster("D-222", "Plaza Nueva 5, 48001", "48001", 200.0);
+
+        when(dumpsterRepository.findByPostalCode("48001")).thenReturn(Arrays.asList(d1, d2));
 
         List<DumpsterStatusDTO> result = dumpsterService.getDumpsterStatus("48001", LocalDate.now());
 
         assertNotNull(result);
-        assertEquals(2, result.size()); // Only dumpsters with postal code 48001
-        assertTrue(result.stream().allMatch(d -> d.dumpsterID() != null));
+        assertEquals(2, result.size());
+        verify(dumpsterRepository, times(1)).findByPostalCode("48001");
     }
 
     @Test
     void getDumpsterStatus_withoutPostalCode_returnsAll() {
-        // Create dumpsters
-        dumpsterService.createNewDumpster("Location 1, 48001", 100.0);
-        dumpsterService.createNewDumpster("Location 2, 28001", 200.0);
+        Dumpster d1 = new Dumpster("D-111", "Location 1, 48001", "48001", 100.0);
+        Dumpster d2 = new Dumpster("D-222", "Location 2, 28001", "28001", 200.0);
+
+        when(dumpsterRepository.findAll()).thenReturn(Arrays.asList(d1, d2));
 
         List<DumpsterStatusDTO> result = dumpsterService.getDumpsterStatus(null, LocalDate.now());
 
         assertNotNull(result);
-        assertEquals(2, result.size()); // All dumpsters
+        assertEquals(2, result.size());
+        verify(dumpsterRepository, times(1)).findAll();
     }
 
     @Test
@@ -61,30 +82,34 @@ class DumpsterServiceTest {
         LocalDate start = LocalDate.now().minusDays(5);
         LocalDate end = LocalDate.now();
 
-        // Create a dumpster and add usage history
-        DumpsterStatusDTO created = dumpsterService.createNewDumpster("Test Location", 100.0);
-        dumpsterService.addUsageHistory(created.dumpsterID(), LocalDate.now().minusDays(2), "green", 50);
-        dumpsterService.addUsageHistory(created.dumpsterID(), LocalDate.now().minusDays(1), "orange", 150);
+        Dumpster dumpster = new Dumpster("D-123", "Test Location", "48001", 100.0);
+        Usage u1 = new Usage(dumpster, LocalDate.now().minusDays(2), "green", 50);
+        Usage u2 = new Usage(dumpster, LocalDate.now().minusDays(1), "orange", 150);
+
+        when(usageRepository.findByDateBetween(start, end)).thenReturn(Arrays.asList(u1, u2));
 
         List<DumpsterUsageDTO> result = dumpsterService.queryDumpsterUsage(start, end);
 
         assertNotNull(result);
         assertEquals(2, result.size());
-        assertTrue(result.stream().allMatch(u -> u.dumpsterID() != null));
-        assertTrue(result.stream().allMatch(u -> u.fillLevel() != null));
+        verify(usageRepository, times(1)).findByDateBetween(start, end);
     }
 
     @Test
     void updateDumpsterStatus_updatesCorrectly() {
-        DumpsterStatusDTO created = dumpsterService.createNewDumpster("Test Location", 100.0);
+        Dumpster dumpster = new Dumpster("D-123", "Test Location", "48001", 100.0);
+        when(dumpsterRepository.findById("D-123")).thenReturn(Optional.of(dumpster));
+        when(dumpsterRepository.save(any(Dumpster.class))).thenReturn(dumpster);
+        when(usageRepository.save(any(Usage.class))).thenReturn(null);
 
-        dumpsterService.updateDumpsterStatus(created.dumpsterID(), "orange", 250);
-
-        List<DumpsterStatusDTO> result = dumpsterService.getDumpsterStatus(null, LocalDate.now());
+        DumpsterStatusDTO result = dumpsterService.updateDumpsterStatus("D-123", "orange", 250);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("orange", result.get(0).fillLevel());
-        assertEquals(250, result.get(0).containersNumber());
+        assertEquals("D-123", result.dumpsterID());
+        assertEquals("orange", result.fillLevel());
+        assertEquals(250, result.containersNumber());
+        verify(dumpsterRepository, times(1)).findById("D-123");
+        verify(dumpsterRepository, times(1)).save(any(Dumpster.class));
+        verify(usageRepository, times(1)).save(any(Usage.class));
     }
 }

@@ -1,50 +1,110 @@
 package com.ecoembes.ecoembes.service;
 
+import com.ecoembes.ecoembes.domain.Assignment;
+import com.ecoembes.ecoembes.domain.Dumpster;
+import com.ecoembes.ecoembes.domain.Employee;
+import com.ecoembes.ecoembes.domain.Plant;
+import com.ecoembes.ecoembes.dto.AssignmentResponseDTO;
 import com.ecoembes.ecoembes.dto.PlantCapacityDTO;
+import com.ecoembes.ecoembes.repository.AssignmentRepository;
+import com.ecoembes.ecoembes.repository.DumpsterRepository;
+import com.ecoembes.ecoembes.repository.EmployeeRepository;
+import com.ecoembes.ecoembes.repository.PlantRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-/**
- * Manages recycling plant operations.
- * Simulated data only - no real plant integration yet.
- */
 @Service
 public class PlantService {
 
-    /**
-     * Returns available capacity for all plants on given date.
-     * TODO: This should eventually query real plant systems.
-     */
-    public List<PlantCapacityDTO> getPlantCapacity(LocalDate date) {
-        System.out.println("Fetching plant capacity for date: " + date);
+    private final PlantRepository plantRepository;
+    private final DumpsterRepository dumpsterRepository;
+    private final EmployeeRepository employeeRepository;
+    private final AssignmentRepository assignmentRepository;
 
-        // Hardcoded for our two partner plants
-        return List.of(
-                new PlantCapacityDTO(
-                        "PLASSB-01",
-                        "PlasSB Ltd.",
-                        150.0
-                ),
-                new PlantCapacityDTO(
-                        "CONTSO-01",
-                        "ContSocket Ltd.",
-                        80.5
-                )
-        );
+    public PlantService(PlantRepository plantRepository, DumpsterRepository dumpsterRepository,
+                        EmployeeRepository employeeRepository, AssignmentRepository assignmentRepository) {
+        this.plantRepository = plantRepository;
+        this.dumpsterRepository = dumpsterRepository;
+        this.employeeRepository = employeeRepository;
+        this.assignmentRepository = assignmentRepository;
     }
 
-    /**
-     * Assigns dumpsters to a plant for pickup.
-     * For now just logs the assignment - no real notification sent.
-     */
-    public void assignDumpsters(String employeeId, String plantId, List<String> dumpsterIds) {
+    @Transactional(readOnly = true)
+    public List<PlantCapacityDTO> getAllPlants() {
+        System.out.println("Fetching all plants");
+
+        List<Plant> plants = plantRepository.findAll();
+
+        return plants.stream()
+                .map(p -> new PlantCapacityDTO(
+                        p.getPlantId(),
+                        p.getName(),
+                        p.getAvailableCapacity()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<PlantCapacityDTO> getPlantCapacity(LocalDate date, String plantId) {
+        System.out.println("Fetching plant capacity for date: " + date + (plantId != null ? " and plantId: " + plantId : ""));
+
+        List<Plant> plants;
+        if (plantId != null && !plantId.isEmpty()) {
+            Plant plant = plantRepository.findById(plantId)
+                    .orElseThrow(() -> new RuntimeException("Plant not found: " + plantId));
+            plants = List.of(plant);
+        } else {
+            plants = plantRepository.findAll();
+        }
+
+        return plants.stream()
+                .map(p -> new PlantCapacityDTO(
+                        p.getPlantId(),
+                        p.getName(),
+                        p.getAvailableCapacity()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public AssignmentResponseDTO assignDumpsters(String employeeId, String plantId, List<String> dumpsterIds) {
         System.out.println("--- DUMPSTER ASSIGNMENT ---");
-        System.out.println("Employee '" + employeeId + "' assigned " + dumpsterIds.size() + " dumpsters to plant '" + plantId + "'.");
-        System.out.println("Dumpsters: " + String.join(", ", dumpsterIds));
-        System.out.println("Simulating notification to plant '" + plantId + "'...");
-        System.out.println("Assignment recorded.");
+        System.out.println("Employee '" + employeeId + "' assigning " + dumpsterIds.size() + " dumpsters to plant '" + plantId + "'.");
+
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found: " + employeeId));
+
+        Plant plant = plantRepository.findById(plantId)
+                .orElseThrow(() -> new RuntimeException("Plant not found: " + plantId));
+
+        LocalDate assignmentDate = LocalDate.now();
+        List<String> assignedDumpsterIds = new ArrayList<>();
+
+        for (String dumpsterId : dumpsterIds) {
+            Dumpster dumpster = dumpsterRepository.findById(dumpsterId)
+                    .orElseThrow(() -> new RuntimeException("Dumpster not found: " + dumpsterId));
+
+            Assignment assignment = new Assignment(plant, dumpster, employee, assignmentDate);
+            assignmentRepository.save(assignment);
+            assignedDumpsterIds.add(dumpsterId);
+        }
+
+        System.out.println("Dumpsters assigned: " + String.join(", ", assignedDumpsterIds));
+        System.out.println("Assignment recorded in database.");
         System.out.println("---------------------------");
+
+        return new AssignmentResponseDTO(
+                employee.getEmployeeId(),
+                employee.getName(),
+                plant.getPlantId(),
+                assignedDumpsterIds,
+                assignmentDate.toString(),
+                "PENDING"
+        );
     }
 }

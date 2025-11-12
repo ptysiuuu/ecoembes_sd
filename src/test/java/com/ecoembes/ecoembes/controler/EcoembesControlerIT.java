@@ -2,8 +2,6 @@ package com.ecoembes.ecoembes.controler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ecoembes.ecoembes.service.DumpsterService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -12,7 +10,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -27,21 +27,6 @@ class EcoembesControlerIT {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    @Autowired
-    private DumpsterService dumpsterService;
-
-    @BeforeEach
-    void setUp() {
-        // Create some test dumpsters with usage history
-        var dumpster1 = dumpsterService.createNewDumpster("Calle Mayor 1, 48001", 500.0);
-        var dumpster2 = dumpsterService.createNewDumpster("Plaza Nueva 5, 48001", 1000.0);
-
-        // Add usage history
-        dumpsterService.addUsageHistory(dumpster1.dumpsterID(), LocalDate.now().minusDays(2), "green", 50);
-        dumpsterService.addUsageHistory(dumpster1.dumpsterID(), LocalDate.now().minusDays(1), "orange", 250);
-        dumpsterService.addUsageHistory(dumpster2.dumpsterID(), LocalDate.now().minusDays(1), "red", 900);
-    }
 
     private String loginAndGetToken(String email, String password) throws Exception {
         String payload = "{" +
@@ -88,7 +73,6 @@ class EcoembesControlerIT {
     void dumpsters_create_and_read_endpoints_ok() throws Exception {
         String token = loginAndGetToken("employee@ecoembes.com", "pass");
 
-        // Create new dumpster
         String createPayload = "{" +
                 "\"location\":\"Test Street 1, 48001\"," +
                 "\"initialCapacity\":100}";
@@ -105,47 +89,79 @@ class EcoembesControlerIT {
                 .getResponse()
                 .getContentAsString();
 
-        // Status endpoint - should return created dumpsters
         mockMvc.perform(get("/api/v1/dumpsters/status")
                         .header("Authorization", token)
-                        .param("postalCode", "48001")
+                        .param("postalCode", "48007")
                         .param("date", LocalDate.now().toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(3)))) // At least 2 from setUp + 1 created
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
                 .andExpect(jsonPath("$[0].dumpsterID", not(emptyOrNullString())));
 
-        // Usage endpoint
         mockMvc.perform(get("/api/v1/dumpsters/usage")
                         .header("Authorization", token)
-                        .param("startDate", LocalDate.now().minusDays(3).toString())
-                        .param("endDate", LocalDate.now().toString()))
+                        .param("startDate", LocalDate.of(2025, 11, 5).toString())
+                        .param("endDate", LocalDate.of(2025, 11, 10).toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(3)))); // Usage history from setUp
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(3))));
+    }
+
+    @Test
+    void dumpster_update_endpoint_ok() throws Exception {
+        String token = loginAndGetToken("admin@ecoembes.com", "password123");
+
+        String updatePayload = "{\"fillLevel\":\"red\",\"containersNumber\":500}";
+
+        mockMvc.perform(put("/api/v1/dumpsters/D-123")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatePayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dumpsterID", is("D-123")))
+                .andExpect(jsonPath("$.fillLevel", is("red")))
+                .andExpect(jsonPath("$.containersNumber", is(500)));
     }
 
     @Test
     void plants_capacity_and_assign_ok() throws Exception {
         String token = loginAndGetToken("admin@ecoembes.com", "password123");
 
+        mockMvc.perform(get("/api/v1/plants")
+                        .header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(2))))
+                .andExpect(jsonPath("$[0].plantID", not(emptyOrNullString())))
+                .andExpect(jsonPath("$[0].plantName", not(emptyOrNullString())))
+                .andExpect(jsonPath("$[0].availableCapacityTons", isA(Number.class)));
+
         mockMvc.perform(get("/api/v1/plants/capacity")
                         .header("Authorization", token)
                         .param("date", LocalDate.now().toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(2))))
                 .andExpect(jsonPath("$[0].plantID", not(emptyOrNullString())))
                 .andExpect(jsonPath("$[0].availableCapacityTons", isA(Number.class)));
 
-        String assignPayload = objectMapper.writeValueAsString(
-                new java.util.HashMap<>() {{
-                    put("plantID", "PLASSB-01");
-                    put("dumpsterIDs", List.of("D-1", "D-2"));
-                }}
-        );
+        mockMvc.perform(get("/api/v1/plants/capacity")
+                        .header("Authorization", token)
+                        .param("date", LocalDate.now().toString())
+                        .param("plantId", "PLASSB-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].plantID", is("PLASSB-01")));
+
+        Map<String, Object> assignPayload = new HashMap<>();
+        assignPayload.put("plantID", "PLASSB-01");
+        assignPayload.put("dumpsterIDs", List.of("D-123", "D-456"));
+        assignPayload.put("date", LocalDate.now().toString());
 
         mockMvc.perform(post("/api/v1/plants/assign")
                         .header("Authorization", token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(assignPayload))
-                .andExpect(status().isOk());
+                        .content(objectMapper.writeValueAsString(assignPayload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.employeeId", is("E001")))
+                .andExpect(jsonPath("$.plantId", is("PLASSB-01")))
+                .andExpect(jsonPath("$.dumpsterIds", hasSize(2)))
+                .andExpect(jsonPath("$.status", is("PENDING")));
     }
 }

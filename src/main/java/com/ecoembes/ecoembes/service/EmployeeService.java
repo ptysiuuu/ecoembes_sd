@@ -1,33 +1,27 @@
 package com.ecoembes.ecoembes.service;
 
+import com.ecoembes.ecoembes.domain.Employee;
 import com.ecoembes.ecoembes.dto.AuthTokenDTO;
 import com.ecoembes.ecoembes.dto.EmployeeDataDTO;
 import com.ecoembes.ecoembes.exception.LoginException;
+import com.ecoembes.ecoembes.repository.EmployeeRepository;
 import com.ecoembes.ecoembes.statemanagement.SessionManager;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.Map;
 
 /**
  * Handles employee authentication and session management.
- * For now, uses hardcoded credentials - no real DB needed for prototype.
  */
 @Service
 public class EmployeeService {
 
     private final SessionManager sessionManager;
+    private final EmployeeRepository employeeRepository;
 
-    // Simulated employee DB - just for testing
-    private record EmployeeRecord(String password, EmployeeDataDTO data) {}
-
-    private static final Map<String, EmployeeRecord> employees = Map.of(
-            "admin@ecoembes.com", new EmployeeRecord("password123", new EmployeeDataDTO("E001", "Admin User", "admin@ecoembes.com")),
-            "employee@ecoembes.com", new EmployeeRecord("pass", new EmployeeDataDTO("E002", "Jane Doe", "employee@ecoembes.com"))
-    );
-
-    public EmployeeService(SessionManager sessionManager) {
+    public EmployeeService(SessionManager sessionManager, EmployeeRepository employeeRepository) {
         this.sessionManager = sessionManager;
+        this.employeeRepository = employeeRepository;
     }
 
     /**
@@ -37,22 +31,27 @@ public class EmployeeService {
     public AuthTokenDTO login(String email, String password) {
         System.out.println("Attempting login for email: " + email);
 
-        EmployeeRecord employeeRecord = employees.get(email);
+        Employee employee = employeeRepository.findByEmail(email)
+                .orElseThrow(() -> new LoginException("Invalid email or password."));
 
-        // Check credentials
-        if (employeeRecord != null && employeeRecord.password().equals(password)) {
-            EmployeeDataDTO employeeData = employeeRecord.data();
-            long timestamp = Instant.now().toEpochMilli();
-            String token = String.valueOf(timestamp);
-
-            sessionManager.storeToken(token, employeeData);
-
-            System.out.println("Login successful for " + employeeData.name() + ". Token created: " + token);
-            return new AuthTokenDTO(token, timestamp);
-        } else {
+        if (!employee.getPassword().equals(password)) {
             System.out.println("Login failed for email: " + email);
             throw new LoginException("Invalid email or password.");
         }
+
+        EmployeeDataDTO employeeData = new EmployeeDataDTO(
+                employee.getEmployeeId(),
+                employee.getName(),
+                employee.getEmail()
+        );
+
+        long timestamp = Instant.now().toEpochMilli();
+        String token = String.valueOf(timestamp);
+
+        sessionManager.storeToken(token, employeeData);
+
+        System.out.println("Login successful for " + employeeData.name() + ". Token created: " + token);
+        return new AuthTokenDTO(token, timestamp);
     }
 
     /**

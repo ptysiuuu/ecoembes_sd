@@ -99,6 +99,27 @@ public class EcoembesControler {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdDumpster);
     }
 
+    @Operation(summary = "Update dumpster status")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Dumpster updated successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DumpsterStatusDTO.class))),
+            @ApiResponse(responseCode = "401", description = "Invalid token"),
+            @ApiResponse(responseCode = "404", description = "Dumpster not found")
+    })
+    @PutMapping("/dumpsters/{id}")
+    public ResponseEntity<DumpsterStatusDTO> updateDumpster(
+            @Parameter(description = "Session token received at login") @RequestHeader("Authorization") String token,
+            @Parameter(description = "Dumpster ID", required = true) @PathVariable String id,
+            @Valid @RequestBody UpdateDumpsterDTO updateData
+    ) {
+        validate(token);
+        DumpsterStatusDTO updatedDumpster = dumpsterService.updateDumpsterStatus(
+                id,
+                updateData.fillLevel(),
+                updateData.containersNumber()
+        );
+        return ResponseEntity.ok(updatedDumpster);
+    }
+
     @Operation(summary = "Check dumpster status for a specific area")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved dumpster status"),
@@ -133,33 +154,53 @@ public class EcoembesControler {
 
     // --- Recycling Plant Endpoints ---
 
+    @Operation(summary = "Get all recycling plants")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved all plants"),
+            @ApiResponse(responseCode = "401", description = "Invalid token")
+    })
+    @GetMapping("/plants")
+    public ResponseEntity<List<PlantCapacityDTO>> getAllPlants(
+            @Parameter(description = "Session token received at login") @RequestHeader("Authorization") String token
+    ) {
+        validate(token);
+        List<PlantCapacityDTO> plants = plantService.getAllPlants();
+        return ResponseEntity.ok(plants);
+    }
+
     @Operation(summary = "Check available capacity at recycling plants")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved plant capacities"),
-            @ApiResponse(responseCode = "401", description = "Invalid token")
+            @ApiResponse(responseCode = "401", description = "Invalid token"),
+            @ApiResponse(responseCode = "404", description = "Plant not found")
     })
     @GetMapping("/plants/capacity")
     public ResponseEntity<List<PlantCapacityDTO>> getPlantCapacity(
             @Parameter(description = "Session token received at login") @RequestHeader("Authorization") String token,
-            @Parameter(description = "Date to check capacity for (YYYY-MM-DD)", required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+            @Parameter(description = "Date to check capacity for (YYYY-MM-DD)", required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Parameter(description = "Optional plant ID to filter specific plant") @RequestParam(required = false) String plantId
     ) {
         validate(token);
-        List<PlantCapacityDTO> capacityList = plantService.getPlantCapacity(date);
+        List<PlantCapacityDTO> capacityList = plantService.getPlantCapacity(date, plantId);
         return ResponseEntity.ok(capacityList);
     }
 
     @Operation(summary = "Assign one or more dumpsters to a recycling plant")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Dumpsters assigned successfully"),
+            @ApiResponse(responseCode = "200", description = "Dumpsters assigned successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AssignmentResponseDTO.class))),
             @ApiResponse(responseCode = "401", description = "Invalid token")
     })
     @PostMapping("/plants/assign")
-    public ResponseEntity<Void> assignDumpstersToPlant(
+    public ResponseEntity<AssignmentResponseDTO> assignDumpstersToPlant(
             @Parameter(description = "Session token received at login") @RequestHeader("Authorization") String token,
             @Valid @RequestBody AssignDumpsterDTO assignment
     ) {
         EmployeeDataDTO employeeData = validate(token);
-        plantService.assignDumpsters(employeeData.employeeID(), assignment.plantID(), assignment.dumpsterIDs());
-        return ResponseEntity.ok().build();
+        AssignmentResponseDTO response = plantService.assignDumpsters(
+                employeeData.employeeID(),
+                assignment.plantID(),
+                assignment.dumpsterIDs()
+        );
+        return ResponseEntity.ok(response);
     }
 }
