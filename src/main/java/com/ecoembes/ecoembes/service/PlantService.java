@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class PlantService {
@@ -50,7 +51,7 @@ public class PlantService {
                 .map(p -> new PlantCapacityDTO(
                         p.getPlantId(),
                         p.getName(),
-                        p.getAvailableCapacity()
+                        resolveCapacity(p)
                 ))
                 .collect(Collectors.toList());
     }
@@ -59,20 +60,20 @@ public class PlantService {
     public List<PlantCapacityDTO> getPlantCapacityByDate(LocalDate date, String plantId) {
         System.out.println("Fetching plant capacity for date: " + date + (plantId != null ? " and plantId: " + plantId : ""));
 
-        List<Plant> plants;
+        Stream<Plant> plantStream;
         if (plantId != null && !plantId.isEmpty()) {
             Plant plant = plantRepository.findById(plantId)
                     .orElseThrow(() -> new RuntimeException("Plant not found: " + plantId));
-            plants = List.of(plant);
+            plantStream = Stream.of(plant);
         } else {
-            plants = plantRepository.findAll();
+            plantStream = plantRepository.findAll().stream();
         }
 
-        return plants.stream()
+        return plantStream
                 .map(p -> new PlantCapacityDTO(
                         p.getPlantId(),
                         p.getName(),
-                        p.getAvailableCapacity()
+                        resolveCapacity(p)
                 ))
                 .collect(Collectors.toList());
     }
@@ -122,5 +123,27 @@ public class PlantService {
                 assignmentDate.toString(),
                 "PENDING"
         );
+    }
+
+    private Double resolveCapacity(Plant plant) {
+        String gatewayType = plant.getGatewayType();
+        if (gatewayType == null || gatewayType.isBlank()) {
+            return plant.getAvailableCapacity();
+        }
+        try {
+            ServiceGateway serviceGateway = serviceGatewayFactory.getServiceGateway(gatewayType);
+            if (serviceGateway == null) {
+                System.out.println("No service gateway registered for type " + gatewayType + ". Using stored capacity for plant " + plant.getPlantId());
+                return plant.getAvailableCapacity();
+            }
+            Double remoteCapacity = serviceGateway.getPlantCapacity(plant);
+            if (remoteCapacity != null) {
+                return remoteCapacity;
+            }
+            System.out.println("Gateway " + gatewayType + " returned null capacity for plant " + plant.getPlantId() + ". Using stored capacity value.");
+        } catch (Exception ex) {
+            System.out.println("Failed to retrieve live capacity for plant " + plant.getPlantId() + " via gateway " + gatewayType + ": " + ex.getMessage());
+        }
+        return plant.getAvailableCapacity();
     }
 }

@@ -34,6 +34,6 @@ class ContSocketServiceGatewayTest {
         Double capacity = gateway.getPlantCapacity(plant);
 
         assertEquals(75.0, capacity);
-        assertEquals("GET_CAPACITY CONTSO-01\n", outputStream.toString());
+        assertEquals("GET_CAPACITY CONTSO-01" + System.lineSeparator(), outputStream.toString());
     }
 }
