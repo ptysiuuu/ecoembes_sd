@@ -49,8 +49,12 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initializePlants() {
-        Plant plassb = new Plant("PLASSB-01", "PlasSB Ltd.", 150.0, "PLASTIC");
-        Plant contsocket = new Plant("CONTSO-01", "ContSocket Ltd.", 80.5, "GENERAL");
+        Plant plassb = new Plant("PLASSB-01", "PlasSB Ltd.", 150.0, "PLASTIC", "PlasSB");
+        plassb.setHost("localhost");
+        plassb.setPort(8080);
+        Plant contsocket = new Plant("CONTSO-01", "ContSocket Ltd.", 80.5, "GENERAL", "ContSocket");
+        contsocket.setHost("localhost");
+        contsocket.setPort(4444);
 
         plantRepository.save(plassb);
         plantRepository.save(contsocket);
@@ -89,4 +93,3 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println("Initialized usage history with 5 records");
     }
 }
-

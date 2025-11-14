@@ -10,6 +10,8 @@ import com.ecoembes.ecoembes.repository.AssignmentRepository;
 import com.ecoembes.ecoembes.repository.DumpsterRepository;
 import com.ecoembes.ecoembes.repository.EmployeeRepository;
 import com.ecoembes.ecoembes.repository.PlantRepository;
+import com.ecoembes.ecoembes.service.remote.ServiceGateway;
+import com.ecoembes.ecoembes.service.remote.ServiceGatewayFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -40,13 +42,16 @@ class PlantServiceTest {
     @Mock
     private AssignmentRepository assignmentRepository;
 
+    @Mock
+    private ServiceGatewayFactory serviceGatewayFactory;
+
     @InjectMocks
     private PlantService plantService;
 
     @Test
     void getAllPlants_returnsAllPlants() {
-        Plant p1 = new Plant("PLASSB-01", "PlasSB Ltd.", 150.0, "PLASTIC");
-        Plant p2 = new Plant("CONTSO-01", "ContSocket Ltd.", 80.5, "GENERAL");
+        Plant p1 = new Plant("PLASSB-01", "PlasSB Ltd.", 150.0, "PLASTIC", "PlasSB");
+        Plant p2 = new Plant("CONTSO-01", "ContSocket Ltd.", 80.5, "GENERAL", "ContSocket");
 
         when(plantRepository.findAll()).thenReturn(Arrays.asList(p1, p2));
 
@@ -61,12 +66,12 @@ class PlantServiceTest {
 
     @Test
     void getPlantCapacity_withoutPlantId_returnsAllPlants() {
-        Plant p1 = new Plant("PLASSB-01", "PlasSB Ltd.", 150.0, "PLASTIC");
-        Plant p2 = new Plant("CONTSO-01", "ContSocket Ltd.", 80.5, "GENERAL");
+        Plant p1 = new Plant("PLASSB-01", "PlasSB Ltd.", 150.0, "PLASTIC", "PlasSB");
+        Plant p2 = new Plant("CONTSO-01", "ContSocket Ltd.", 80.5, "GENERAL", "ContSocket");
 
         when(plantRepository.findAll()).thenReturn(Arrays.asList(p1, p2));
 
-        List<PlantCapacityDTO> result = plantService.getPlantCapacity(LocalDate.now(), null);
+        List<PlantCapacityDTO> result = plantService.getPlantCapacityByDate(LocalDate.now(), null);
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -76,11 +81,11 @@ class PlantServiceTest {
 
     @Test
     void getPlantCapacity_withPlantId_returnsSpecificPlant() {
-        Plant plant = new Plant("PLASSB-01", "PlasSB Ltd.", 150.0, "PLASTIC");
+        Plant plant = new Plant("PLASSB-01", "PlasSB Ltd.", 150.0, "PLASTIC", "PlasSB");
 
         when(plantRepository.findById("PLASSB-01")).thenReturn(Optional.of(plant));
 
-        List<PlantCapacityDTO> result = plantService.getPlantCapacity(LocalDate.now(), "PLASSB-01");
+        List<PlantCapacityDTO> result = plantService.getPlantCapacityByDate(LocalDate.now(), "PLASSB-01");
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -94,16 +99,30 @@ class PlantServiceTest {
         when(plantRepository.findById("INVALID")).thenReturn(Optional.empty());
 
         assertThrows(RuntimeException.class, () ->
-            plantService.getPlantCapacity(LocalDate.now(), "INVALID")
+            plantService.getPlantCapacityByDate(LocalDate.now(), "INVALID")
         );
 
         verify(plantRepository, times(1)).findById("INVALID");
     }
 
     @Test
+    void getPlantCapacity_withValidPlantId_returnsCapacity() throws Exception {
+        Plant plant = new Plant("PLASSB-01", "PlasSB Ltd.", 150.0, "PLASTIC", "PlasSB");
+        ServiceGateway serviceGateway = mock(ServiceGateway.class);
+
+        when(plantRepository.findById("PLASSB-01")).thenReturn(Optional.of(plant));
+        when(serviceGatewayFactory.getServiceGateway("PlasSB")).thenReturn(serviceGateway);
+        when(serviceGateway.getPlantCapacity(plant)).thenReturn(80.5);
+
+        Double capacity = plantService.getPlantCapacity("PLASSB-01");
+
+        assertEquals(80.5, capacity);
+    }
+
+    @Test
     void assignDumpsters_createsAssignments() {
         Employee employee = new Employee("E001", "Admin User", "admin@ecoembes.com", "password123");
-        Plant plant = new Plant("PLASSB-01", "PlasSB Ltd.", 150.0, "PLASTIC");
+        Plant plant = new Plant("PLASSB-01", "PlasSB Ltd.", 150.0, "PLASTIC", "PlasSB");
         Dumpster d1 = new Dumpster("D-1", "Location 1", "48001", 100.0);
         Dumpster d2 = new Dumpster("D-2", "Location 2", "48001", 200.0);
 

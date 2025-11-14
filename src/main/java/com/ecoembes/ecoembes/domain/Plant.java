@@ -20,16 +20,26 @@ public class Plant {
     @Column(nullable = false)
     private String type;
 
+    @Column(nullable = true)
+    private String host;
+
+    @Column(nullable = true)
+    private int port;
+
+    @Column(nullable = true)
+    private String gatewayType;
+
     @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Assignment> assignments = new ArrayList<>();
 
     protected Plant() {}
 
-    public Plant(String plantId, String name, Double availableCapacity, String type) {
+    public Plant(String plantId, String name, Double availableCapacity, String type, String gatewayType) {
         this.plantId = plantId;
         this.name = name;
         this.availableCapacity = availableCapacity;
         this.type = type;
+        this.gatewayType = gatewayType;
     }
 
     public String getPlantId() {
@@ -71,5 +81,28 @@ public class Plant {
     public void setAssignments(List<Assignment> assignments) {
         this.assignments = assignments;
     }
-}
 
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public String getGatewayType() {
+        return gatewayType;
+    }
+
+    public void setGatewayType(String gatewayType) {
+        this.gatewayType = gatewayType;
+    }
+}
