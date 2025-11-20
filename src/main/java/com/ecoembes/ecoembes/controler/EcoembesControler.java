@@ -194,10 +194,13 @@ public class EcoembesControler {
     @GetMapping("/plants/{plantId}/capacity")
     public ResponseEntity<Double> getPlantCapacity(
             @Parameter(description = "Session token received at login") @RequestHeader("Authorization") String token,
-            @Parameter(description = "Plant ID to check capacity for", required = true) @PathVariable String plantId
+            @Parameter(description = "Plant ID to check capacity for", required = true) @PathVariable String plantId,
+            @Parameter(description = "Date to check capacity (YYYY-MM-DD)", required = false)
+            @RequestParam(name = "date", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) throws Exception {
         validate(token);
-        Double capacity = plantService.getPlantCapacity(plantId);
+        Double capacity = plantService.getPlantCapacity(plantId, date);
         return ResponseEntity.ok(capacity);
     }
 

@@ -7,6 +7,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @Service("ContSocket")
 public class ContSocketServiceGateway implements ServiceGateway {
@@ -22,13 +24,14 @@ public class ContSocketServiceGateway implements ServiceGateway {
     }
 
     @Override
-    public Double getPlantCapacity(Plant plant) throws Exception {
+    public Double getPlantCapacity(Plant plant, LocalDate date) throws Exception {
         try (
             Socket socket = socketFactory.createSocket(plant.getHost(), plant.getPort());
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         ) {
-            out.println("GET_CAPACITY " + plant.getPlantId());
+            String formattedDate = date != null ? date.format(DateTimeFormatter.ISO_DATE) : "";
+            out.println("GET_CAPACITY " + plant.getPlantId() + (formattedDate.isEmpty() ? "" : " " + formattedDate));
             String response = in.readLine();
             if (response != null && !response.startsWith("ERROR")) {
                 return Double.parseDouble(response);

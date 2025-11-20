@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
@@ -35,11 +37,11 @@ class PlasSBServiceGatewayTest {
         dto.setId("PLASSB-01");
         dto.setCapacity(80.5);
 
-        String url = "http://localhost:8080/api/plants/PLASSB-01/capacity";
+        String url = "http://localhost:8080/api/plants/PLASSB-01/capacity?date=2025-11-05";
         mockServer.expect(requestTo(url))
                 .andRespond(withSuccess(objectMapper.writeValueAsString(dto), org.springframework.http.MediaType.APPLICATION_JSON));
 
-        Double capacity = gateway.getPlantCapacity(plant);
+        Double capacity = gateway.getPlantCapacity(plant, LocalDate.of(2025, 11, 5));
         assertEquals(80.5, capacity);
         mockServer.verify();
     }

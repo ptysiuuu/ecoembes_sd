@@ -8,6 +8,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -31,9 +32,10 @@ class ContSocketServiceGatewayTest {
         when(socket.getOutputStream()).thenReturn(outputStream);
 
         ContSocketServiceGateway gateway = new ContSocketServiceGateway(socketFactory);
-        Double capacity = gateway.getPlantCapacity(plant);
+        LocalDate date = LocalDate.of(2025, 11, 5);
+        Double capacity = gateway.getPlantCapacity(plant, date);
 
         assertEquals(75.0, capacity);
-        assertEquals("GET_CAPACITY CONTSO-01" + System.lineSeparator(), outputStream.toString());
+        assertEquals("GET_CAPACITY CONTSO-01 2025-11-05" + System.lineSeparator(), outputStream.toString());
     }
 }

@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -109,14 +110,16 @@ class PlantServiceTest {
     void getPlantCapacity_withValidPlantId_returnsCapacity() throws Exception {
         Plant plant = new Plant("PLASSB-01", "PlasSB Ltd.", 150.0, "PLASTIC", "PlasSB");
         ServiceGateway serviceGateway = mock(ServiceGateway.class);
+        LocalDate requestedDate = LocalDate.of(2025, 11, 5);
 
         when(plantRepository.findById("PLASSB-01")).thenReturn(Optional.of(plant));
         when(serviceGatewayFactory.getServiceGateway("PlasSB")).thenReturn(serviceGateway);
-        when(serviceGateway.getPlantCapacity(plant)).thenReturn(80.5);
+        when(serviceGateway.getPlantCapacity(plant, requestedDate)).thenReturn(80.5);
 
-        Double capacity = plantService.getPlantCapacity("PLASSB-01");
+        Double capacity = plantService.getPlantCapacity("PLASSB-01", requestedDate);
 
         assertEquals(80.5, capacity);
+        verify(serviceGateway, times(1)).getPlantCapacity(plant, requestedDate);
     }
 
     @Test

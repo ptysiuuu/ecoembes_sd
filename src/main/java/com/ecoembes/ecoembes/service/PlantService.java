@@ -46,19 +46,21 @@ public class PlantService {
         System.out.println("Fetching all plants");
 
         List<Plant> plants = plantRepository.findAll();
+        LocalDate defaultDate = LocalDate.now();
 
         return plants.stream()
                 .map(p -> new PlantCapacityDTO(
                         p.getPlantId(),
                         p.getName(),
-                        resolveCapacity(p)
+                        resolveCapacity(p, defaultDate)
                 ))
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<PlantCapacityDTO> getPlantCapacityByDate(LocalDate date, String plantId) {
-        System.out.println("Fetching plant capacity for date: " + date + (plantId != null ? " and plantId: " + plantId : ""));
+        LocalDate effectiveDate = date != null ? date : LocalDate.now();
+        System.out.println("Fetching plant capacity for date: " + effectiveDate + (plantId != null ? " and plantId: " + plantId : ""));
 
         Stream<Plant> plantStream;
         if (plantId != null && !plantId.isEmpty()) {
@@ -73,17 +75,23 @@ public class PlantService {
                 .map(p -> new PlantCapacityDTO(
                         p.getPlantId(),
                         p.getName(),
-                        resolveCapacity(p)
+                        resolveCapacity(p, effectiveDate)
                 ))
                 .collect(Collectors.toList());
     }
 
     @Transactional
     public Double getPlantCapacity(String plantId) throws Exception {
+        return getPlantCapacity(plantId, LocalDate.now());
+    }
+
+    @Transactional
+    public Double getPlantCapacity(String plantId, LocalDate date) throws Exception {
+        LocalDate effectiveDate = date != null ? date : LocalDate.now();
         Optional<Plant> plant = plantRepository.findById(plantId);
         if (plant.isPresent()) {
             ServiceGateway serviceGateway = serviceGatewayFactory.getServiceGateway(plant.get().getGatewayType());
-            return serviceGateway.getPlantCapacity(plant.get());
+            return serviceGateway.getPlantCapacity(plant.get(), effectiveDate);
         }
         return null;
     }
@@ -125,7 +133,7 @@ public class PlantService {
         );
     }
 
-    private Double resolveCapacity(Plant plant) {
+    private Double resolveCapacity(Plant plant, LocalDate date) {
         String gatewayType = plant.getGatewayType();
         if (gatewayType == null || gatewayType.isBlank()) {
             return plant.getAvailableCapacity();
@@ -136,7 +144,7 @@ public class PlantService {
                 System.out.println("No service gateway registered for type " + gatewayType + ". Using stored capacity for plant " + plant.getPlantId());
                 return plant.getAvailableCapacity();
             }
-            Double remoteCapacity = serviceGateway.getPlantCapacity(plant);
+            Double remoteCapacity = serviceGateway.getPlantCapacity(plant, date);
             if (remoteCapacity != null) {
                 return remoteCapacity;
             }
