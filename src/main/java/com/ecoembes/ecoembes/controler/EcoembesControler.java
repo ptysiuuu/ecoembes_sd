@@ -185,24 +185,6 @@ public class EcoembesControler {
         return ResponseEntity.ok(capacityList);
     }
 
-    @Operation(summary = "Check available capacity at a specific recycling plant")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved plant capacity"),
-            @ApiResponse(responseCode = "401", description = "Invalid token"),
-            @ApiResponse(responseCode = "404", description = "Plant not found")
-    })
-    @GetMapping("/plants/{plantId}/capacity")
-    public ResponseEntity<Double> getPlantCapacity(
-            @Parameter(description = "Session token received at login") @RequestHeader("Authorization") String token,
-            @Parameter(description = "Plant ID to check capacity for", required = true) @PathVariable String plantId,
-            @Parameter(description = "Date to check capacity (YYYY-MM-DD)", required = false)
-            @RequestParam(name = "date", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
-    ) throws Exception {
-        validate(token);
-        Double capacity = plantService.getPlantCapacity(plantId, date);
-        return ResponseEntity.ok(capacity);
-    }
 
     @Operation(summary = "Assign one or more dumpsters to a recycling plant")
     @ApiResponses(value = {

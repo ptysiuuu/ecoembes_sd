@@ -13,6 +13,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -47,12 +48,13 @@ class EcoembesControlerTest {
 
     @Test
     void getPlantCapacity() throws Exception {
-        when(plantService.getPlantCapacity(anyString(), any(LocalDate.class))).thenReturn(80.5);
+        when(plantService.getPlantCapacityByDate(any(LocalDate.class), anyString())).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/api/v1/plants/PLASSB-01/capacity")
+        mockMvc.perform(get("/api/v1/plants/capacity")
                 .param("date", "2025-11-05")
+                .param("plantId", "PLASSB-01")
                 .header("Authorization", "test-token"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("80.5"));
+                .andExpect(content().json("[]"));
     }
 }
