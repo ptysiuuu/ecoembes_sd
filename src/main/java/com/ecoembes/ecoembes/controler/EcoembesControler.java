@@ -66,7 +66,18 @@ public class EcoembesControler {
     })
     @PostMapping("/login")
     public ResponseEntity<AuthTokenDTO> login(@Valid @RequestBody LoginCredentialDTO credentials) {
-        AuthTokenDTO authToken = employeeService.login(credentials.email(), credentials.password());
+        com.ecoembes.ecoembes.domain.Employee employee = employeeService.login(credentials.email(), credentials.password());
+
+        // Controller creates DTO from domain entity
+        EmployeeDataDTO employeeData = new EmployeeDataDTO(
+                employee.getEmployeeId(),
+                employee.getName(),
+                employee.getEmail()
+        );
+
+        String token = employeeService.createSessionToken(employeeData);
+        long timestamp = Long.parseLong(token);
+        AuthTokenDTO authToken = new AuthTokenDTO(token, timestamp);
         return ResponseEntity.ok(authToken);
     }
 
@@ -95,8 +106,14 @@ public class EcoembesControler {
             @Valid @RequestBody NewDumpsterDTO newDumpster
     ) {
         validate(token);
-        DumpsterStatusDTO createdDumpster = dumpsterService.createNewDumpster(newDumpster.location(), newDumpster.initialCapacity());
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdDumpster);
+        com.ecoembes.ecoembes.domain.Dumpster dumpster = dumpsterService.createNewDumpster(newDumpster.location(), newDumpster.initialCapacity());
+        DumpsterStatusDTO dto = new DumpsterStatusDTO(
+                dumpster.getDumpsterId(),
+                dumpster.getLocation(),
+                dumpster.getFillLevel(),
+                dumpster.getContainersNumber()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
     @Operation(summary = "Update dumpster status")
@@ -112,12 +129,18 @@ public class EcoembesControler {
             @Valid @RequestBody UpdateDumpsterDTO updateData
     ) {
         validate(token);
-        DumpsterStatusDTO updatedDumpster = dumpsterService.updateDumpsterStatus(
+        com.ecoembes.ecoembes.domain.Dumpster dumpster = dumpsterService.updateDumpsterStatus(
                 id,
                 updateData.fillLevel(),
                 updateData.containersNumber()
         );
-        return ResponseEntity.ok(updatedDumpster);
+        DumpsterStatusDTO dto = new DumpsterStatusDTO(
+                dumpster.getDumpsterId(),
+                dumpster.getLocation(),
+                dumpster.getFillLevel(),
+                dumpster.getContainersNumber()
+        );
+        return ResponseEntity.ok(dto);
     }
 
     @Operation(summary = "Check dumpster status for a specific area")
@@ -132,7 +155,15 @@ public class EcoembesControler {
             @Parameter(description = "Date to check status for (YYYY-MM-DD)", required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
         validate(token);
-        List<DumpsterStatusDTO> statusList = dumpsterService.getDumpsterStatus(postalCode, date);
+        List<com.ecoembes.ecoembes.domain.Dumpster> dumpsters = dumpsterService.getDumpsterStatus(postalCode, date);
+        List<DumpsterStatusDTO> statusList = dumpsters.stream()
+                .map(d -> new DumpsterStatusDTO(
+                        d.getDumpsterId(),
+                        d.getLocation(),
+                        d.getFillLevel(),
+                        d.getContainersNumber()
+                ))
+                .collect(java.util.stream.Collectors.toList());
         return ResponseEntity.ok(statusList);
     }
 
@@ -148,7 +179,15 @@ public class EcoembesControler {
             @Parameter(description = "End date for query (YYYY-MM-DD)", required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
         validate(token);
-        List<DumpsterUsageDTO> usageList = dumpsterService.queryDumpsterUsage(startDate, endDate);
+        List<com.ecoembes.ecoembes.domain.Usage> usages = dumpsterService.queryDumpsterUsage(startDate, endDate);
+        List<DumpsterUsageDTO> usageList = usages.stream()
+                .map(u -> new DumpsterUsageDTO(
+                        u.getDumpster().getDumpsterId(),
+                        u.getDate(),
+                        u.getFillLevel(),
+                        u.getContainersCount()
+                ))
+                .collect(java.util.stream.Collectors.toList());
         return ResponseEntity.ok(usageList);
     }
 
@@ -164,8 +203,19 @@ public class EcoembesControler {
             @Parameter(description = "Session token received at login") @RequestHeader("Authorization") String token
     ) {
         validate(token);
-        List<PlantCapacityDTO> plants = plantService.getAllPlants();
-        return ResponseEntity.ok(plants);
+        List<com.ecoembes.ecoembes.domain.Plant> plants = plantService.getAllPlants();
+        LocalDate now = LocalDate.now();
+        List<PlantCapacityDTO> plantDTOs = plants.stream()
+                .map(p -> {
+                    try {
+                        Double capacity = plantService.getPlantCapacity(p.getPlantId(), now);
+                        return new PlantCapacityDTO(p.getPlantId(), p.getName(), capacity != null ? capacity : p.getAvailableCapacity());
+                    } catch (Exception e) {
+                        return new PlantCapacityDTO(p.getPlantId(), p.getName(), p.getAvailableCapacity());
+                    }
+                })
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(plantDTOs);
     }
 
     @Operation(summary = "Check available capacity at recycling plants")
@@ -181,7 +231,17 @@ public class EcoembesControler {
             @Parameter(description = "Optional plant ID to filter specific plant") @RequestParam(required = false) String plantId
     ) {
         validate(token);
-        List<PlantCapacityDTO> capacityList = plantService.getPlantCapacityByDate(date, plantId);
+        List<com.ecoembes.ecoembes.domain.Plant> plants = plantService.getPlantCapacityByDate(date, plantId);
+        List<PlantCapacityDTO> capacityList = plants.stream()
+                .map(p -> {
+                    try {
+                        Double capacity = plantService.getPlantCapacity(p.getPlantId(), date);
+                        return new PlantCapacityDTO(p.getPlantId(), p.getName(), capacity != null ? capacity : p.getAvailableCapacity());
+                    } catch (Exception e) {
+                        return new PlantCapacityDTO(p.getPlantId(), p.getName(), p.getAvailableCapacity());
+                    }
+                })
+                .collect(java.util.stream.Collectors.toList());
         return ResponseEntity.ok(capacityList);
     }
 
@@ -197,11 +257,27 @@ public class EcoembesControler {
             @Valid @RequestBody AssignDumpsterDTO assignment
     ) {
         EmployeeDataDTO employeeData = validate(token);
-        AssignmentResponseDTO response = plantService.assignDumpsters(
+        List<com.ecoembes.ecoembes.domain.Assignment> assignments = plantService.assignDumpsters(
                 employeeData.employeeID(),
                 assignment.plantID(),
                 assignment.dumpsterIDs()
         );
+
+        // Convert domain to DTO
+        com.ecoembes.ecoembes.domain.Assignment firstAssignment = assignments.get(0);
+        List<String> dumpsterIds = assignments.stream()
+                .map(a -> a.getDumpster().getDumpsterId())
+                .collect(java.util.stream.Collectors.toList());
+
+        AssignmentResponseDTO response = new AssignmentResponseDTO(
+                firstAssignment.getEmployee().getEmployeeId(),
+                firstAssignment.getEmployee().getName(),
+                firstAssignment.getPlant().getPlantId(),
+                dumpsterIds,
+                firstAssignment.getAssignmentDate().toString(),
+                firstAssignment.getStatus()
+        );
+
         return ResponseEntity.ok(response);
     }
 }

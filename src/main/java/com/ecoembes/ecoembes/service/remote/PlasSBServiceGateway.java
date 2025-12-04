@@ -23,6 +23,8 @@ public class PlasSBServiceGateway implements ServiceGateway {
 
     @Override
     public Double getPlantCapacity(Plant plant, LocalDate date) throws Exception {
+        // Plant object already resolved, so we use its ID from the object itself
+        // No need to pass plantId separately since gateway was obtained via plant's gatewayType
         String formattedDate = date != null ? date.format(DateTimeFormatter.ISO_DATE) : "";
         String url = "http://" + plant.getHost() + ":" + plant.getPort()
                 + "/api/plants/" + plant.getPlantId() + "/capacity";

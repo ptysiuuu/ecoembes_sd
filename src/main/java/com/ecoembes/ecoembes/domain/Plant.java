@@ -29,6 +29,9 @@ public class Plant {
     @Column(nullable = true)
     private String gatewayType;
 
+    @Column(nullable = false)
+    private int totalContainersReceived;
+
     @OneToMany(mappedBy = "plant", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Assignment> assignments = new ArrayList<>();
 
@@ -40,6 +43,7 @@ public class Plant {
         this.availableCapacity = availableCapacity;
         this.type = type;
         this.gatewayType = gatewayType;
+        this.totalContainersReceived = 0;
     }
 
     public String getPlantId() {
@@ -104,5 +108,17 @@ public class Plant {
 
     public void setGatewayType(String gatewayType) {
         this.gatewayType = gatewayType;
+    }
+
+    public int getTotalContainersReceived() {
+        return totalContainersReceived;
+    }
+
+    public void setTotalContainersReceived(int totalContainersReceived) {
+        this.totalContainersReceived = totalContainersReceived;
+    }
+
+    public void addContainers(int containers) {
+        this.totalContainersReceived += containers;
     }
 }

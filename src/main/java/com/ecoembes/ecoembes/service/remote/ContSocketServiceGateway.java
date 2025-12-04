@@ -25,6 +25,8 @@ public class ContSocketServiceGateway implements ServiceGateway {
 
     @Override
     public Double getPlantCapacity(Plant plant, LocalDate date) throws Exception {
+        // Plant object already resolved by factory, contains all connection details
+        // Gateway selected based on plant's gatewayType, so plantId is used from the object
         try (
             Socket socket = socketFactory.createSocket(plant.getHost(), plant.getPort());
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);

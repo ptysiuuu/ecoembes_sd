@@ -1,12 +1,10 @@
 package com.ecoembes.ecoembes.service;
 
 import com.ecoembes.ecoembes.domain.Employee;
-import com.ecoembes.ecoembes.dto.AuthTokenDTO;
 import com.ecoembes.ecoembes.dto.EmployeeDataDTO;
 import com.ecoembes.ecoembes.exception.LoginException;
 import com.ecoembes.ecoembes.repository.EmployeeRepository;
 import com.ecoembes.ecoembes.statemanagement.SessionManager;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,11 +34,21 @@ class EmployeeServiceTest {
         when(employeeRepository.findByEmail("admin@ecoembes.com")).thenReturn(Optional.of(employee));
         doNothing().when(sessionManager).storeToken(anyString(), any(EmployeeDataDTO.class));
 
-        AuthTokenDTO token = employeeService.login("admin@ecoembes.com", "password123");
+        Employee result = employeeService.login("admin@ecoembes.com", "password123");
 
-        assertNotNull(token);
-        assertNotNull(token.token());
+        assertNotNull(result);
+        assertEquals("E001", result.getEmployeeId());
+        assertEquals("admin@ecoembes.com", result.getEmail());
         verify(employeeRepository, times(1)).findByEmail("admin@ecoembes.com");
+
+        // Test token creation separately with DTO
+        EmployeeDataDTO employeeData = new EmployeeDataDTO(
+                result.getEmployeeId(),
+                result.getName(),
+                result.getEmail()
+        );
+        String token = employeeService.createSessionToken(employeeData);
+        assertNotNull(token);
         verify(sessionManager, times(1)).storeToken(anyString(), any(EmployeeDataDTO.class));
     }
 

@@ -35,17 +35,17 @@ class DumpsterServiceTest {
     private DumpsterService dumpsterService;
 
     @Test
-    void createNewDumpster_returnsValidDTO() {
+    void createNewDumpster_returnsValidDumpster() {
         Dumpster mockDumpster = new Dumpster("D-12345678", "Test Location 48001", "48001", 100.0);
         when(dumpsterRepository.save(any(Dumpster.class))).thenReturn(mockDumpster);
 
-        DumpsterStatusDTO result = dumpsterService.createNewDumpster("Test Location 48001", 100.0);
+        Dumpster result = dumpsterService.createNewDumpster("Test Location 48001", 100.0);
 
         assertNotNull(result);
-        assertTrue(result.dumpsterID().startsWith("D-"));
-        assertEquals("Test Location 48001", result.location());
-        assertEquals("green", result.fillLevel());
-        assertEquals(0, result.containersNumber());
+        assertTrue(result.getDumpsterId().startsWith("D-"));
+        assertEquals("Test Location 48001", result.getLocation());
+        assertEquals("green", result.getFillLevel());
+        assertEquals(0, result.getContainersNumber());
         verify(dumpsterRepository, times(1)).save(any(Dumpster.class));
     }
 
@@ -56,7 +56,7 @@ class DumpsterServiceTest {
 
         when(dumpsterRepository.findByPostalCode("48001")).thenReturn(Arrays.asList(d1, d2));
 
-        List<DumpsterStatusDTO> result = dumpsterService.getDumpsterStatus("48001", LocalDate.now());
+        List<Dumpster> result = dumpsterService.getDumpsterStatus("48001", LocalDate.now());
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -70,7 +70,7 @@ class DumpsterServiceTest {
 
         when(dumpsterRepository.findAll()).thenReturn(Arrays.asList(d1, d2));
 
-        List<DumpsterStatusDTO> result = dumpsterService.getDumpsterStatus(null, LocalDate.now());
+        List<Dumpster> result = dumpsterService.getDumpsterStatus(null, LocalDate.now());
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -88,7 +88,7 @@ class DumpsterServiceTest {
 
         when(usageRepository.findByDateBetween(start, end)).thenReturn(Arrays.asList(u1, u2));
 
-        List<DumpsterUsageDTO> result = dumpsterService.queryDumpsterUsage(start, end);
+        List<Usage> result = dumpsterService.queryDumpsterUsage(start, end);
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -102,12 +102,12 @@ class DumpsterServiceTest {
         when(dumpsterRepository.save(any(Dumpster.class))).thenReturn(dumpster);
         when(usageRepository.save(any(Usage.class))).thenReturn(null);
 
-        DumpsterStatusDTO result = dumpsterService.updateDumpsterStatus("D-123", "orange", 250);
+        Dumpster result = dumpsterService.updateDumpsterStatus("D-123", "orange", 250);
 
         assertNotNull(result);
-        assertEquals("D-123", result.dumpsterID());
-        assertEquals("orange", result.fillLevel());
-        assertEquals(250, result.containersNumber());
+        assertEquals("D-123", result.getDumpsterId());
+        assertEquals("orange", result.getFillLevel());
+        assertEquals(250, result.getContainersNumber());
         verify(dumpsterRepository, times(1)).findById("D-123");
         verify(dumpsterRepository, times(1)).save(any(Dumpster.class));
         verify(usageRepository, times(1)).save(any(Usage.class));

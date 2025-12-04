@@ -4,8 +4,6 @@ import com.ecoembes.ecoembes.domain.Assignment;
 import com.ecoembes.ecoembes.domain.Dumpster;
 import com.ecoembes.ecoembes.domain.Employee;
 import com.ecoembes.ecoembes.domain.Plant;
-import com.ecoembes.ecoembes.dto.AssignmentResponseDTO;
-import com.ecoembes.ecoembes.dto.PlantCapacityDTO;
 import com.ecoembes.ecoembes.repository.AssignmentRepository;
 import com.ecoembes.ecoembes.repository.DumpsterRepository;
 import com.ecoembes.ecoembes.repository.EmployeeRepository;
@@ -19,8 +17,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 public class PlantService {
@@ -42,42 +38,23 @@ public class PlantService {
     }
 
     @Transactional(readOnly = true)
-    public List<PlantCapacityDTO> getAllPlants() {
+    public List<Plant> getAllPlants() {
         System.out.println("Fetching all plants");
-
-        List<Plant> plants = plantRepository.findAll();
-        LocalDate defaultDate = LocalDate.now();
-
-        return plants.stream()
-                .map(p -> new PlantCapacityDTO(
-                        p.getPlantId(),
-                        p.getName(),
-                        resolveCapacity(p, defaultDate)
-                ))
-                .collect(Collectors.toList());
+        return plantRepository.findAll();
     }
 
     @Transactional(readOnly = true)
-    public List<PlantCapacityDTO> getPlantCapacityByDate(LocalDate date, String plantId) {
+    public List<Plant> getPlantCapacityByDate(LocalDate date, String plantId) {
         LocalDate effectiveDate = date != null ? date : LocalDate.now();
         System.out.println("Fetching plant capacity for date: " + effectiveDate + (plantId != null ? " and plantId: " + plantId : ""));
 
-        Stream<Plant> plantStream;
         if (plantId != null && !plantId.isEmpty()) {
             Plant plant = plantRepository.findById(plantId)
                     .orElseThrow(() -> new RuntimeException("Plant not found: " + plantId));
-            plantStream = Stream.of(plant);
+            return List.of(plant);
         } else {
-            plantStream = plantRepository.findAll().stream();
+            return plantRepository.findAll();
         }
-
-        return plantStream
-                .map(p -> new PlantCapacityDTO(
-                        p.getPlantId(),
-                        p.getName(),
-                        resolveCapacity(p, effectiveDate)
-                ))
-                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -97,7 +74,7 @@ public class PlantService {
     }
 
     @Transactional
-    public AssignmentResponseDTO assignDumpsters(String employeeId, String plantId, List<String> dumpsterIds) {
+    public List<Assignment> assignDumpsters(String employeeId, String plantId, List<String> dumpsterIds) {
         System.out.println("--- DUMPSTER ASSIGNMENT ---");
         System.out.println("Employee '" + employeeId + "' assigning " + dumpsterIds.size() + " dumpsters to plant '" + plantId + "'.");
 
@@ -108,50 +85,30 @@ public class PlantService {
                 .orElseThrow(() -> new RuntimeException("Plant not found: " + plantId));
 
         LocalDate assignmentDate = LocalDate.now();
-        List<String> assignedDumpsterIds = new ArrayList<>();
+        List<Assignment> assignments = new ArrayList<>();
+        int totalContainers = 0;
 
         for (String dumpsterId : dumpsterIds) {
             Dumpster dumpster = dumpsterRepository.findById(dumpsterId)
                     .orElseThrow(() -> new RuntimeException("Dumpster not found: " + dumpsterId));
 
-            Assignment assignment = new Assignment(plant, dumpster, employee, assignmentDate);
-            assignmentRepository.save(assignment);
-            assignedDumpsterIds.add(dumpsterId);
+            int containersAtAssignment = dumpster.getContainersNumber();
+            Assignment assignment = new Assignment(plant, dumpster, employee, assignmentDate, containersAtAssignment);
+            assignment = assignmentRepository.save(assignment);
+            assignments.add(assignment);
+            totalContainers += containersAtAssignment;
+
+            System.out.println("Assigned dumpster " + dumpsterId + " with " + containersAtAssignment + " containers");
         }
 
-        System.out.println("Dumpsters assigned: " + String.join(", ", assignedDumpsterIds));
+        plant.addContainers(totalContainers);
+        plantRepository.save(plant);
+
+        System.out.println("Total containers added to plant: " + totalContainers);
+        System.out.println("Plant total containers received: " + plant.getTotalContainersReceived());
         System.out.println("Assignment recorded in database.");
         System.out.println("---------------------------");
 
-        return new AssignmentResponseDTO(
-                employee.getEmployeeId(),
-                employee.getName(),
-                plant.getPlantId(),
-                assignedDumpsterIds,
-                assignmentDate.toString(),
-                "PENDING"
-        );
-    }
-
-    private Double resolveCapacity(Plant plant, LocalDate date) {
-        String gatewayType = plant.getGatewayType();
-        if (gatewayType == null || gatewayType.isBlank()) {
-            return plant.getAvailableCapacity();
-        }
-        try {
-            ServiceGateway serviceGateway = serviceGatewayFactory.getServiceGateway(gatewayType);
-            if (serviceGateway == null) {
-                System.out.println("No service gateway registered for type " + gatewayType + ". Using stored capacity for plant " + plant.getPlantId());
-                return plant.getAvailableCapacity();
-            }
-            Double remoteCapacity = serviceGateway.getPlantCapacity(plant, date);
-            if (remoteCapacity != null) {
-                return remoteCapacity;
-            }
-            System.out.println("Gateway " + gatewayType + " returned null capacity for plant " + plant.getPlantId() + ". Using stored capacity value.");
-        } catch (Exception ex) {
-            System.out.println("Failed to retrieve live capacity for plant " + plant.getPlantId() + " via gateway " + gatewayType + ": " + ex.getMessage());
-        }
-        return plant.getAvailableCapacity();
+        return assignments;
     }
 }

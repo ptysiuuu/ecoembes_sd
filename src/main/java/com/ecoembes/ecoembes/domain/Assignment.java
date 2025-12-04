@@ -33,13 +33,17 @@ public class Assignment {
     @Column(nullable = false)
     private String status;
 
+    @Column(nullable = false)
+    private int assignedContainers;
+
     protected Assignment() {}
 
-    public Assignment(Plant plant, Dumpster dumpster, Employee employee, LocalDate assignmentDate) {
+    public Assignment(Plant plant, Dumpster dumpster, Employee employee, LocalDate assignmentDate, int assignedContainers) {
         this.plant = plant;
         this.dumpster = dumpster;
         this.employee = employee;
         this.assignmentDate = assignmentDate;
+        this.assignedContainers = assignedContainers;
         this.createdAt = LocalDateTime.now();
         this.status = "PENDING";
     }
@@ -98,5 +102,13 @@ public class Assignment {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public int getAssignedContainers() {
+        return assignedContainers;
+    }
+
+    public void setAssignedContainers(int assignedContainers) {
+        this.assignedContainers = assignedContainers;
     }
 }

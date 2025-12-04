@@ -1,7 +1,6 @@
 package com.ecoembes.ecoembes.service;
 
 import com.ecoembes.ecoembes.domain.Employee;
-import com.ecoembes.ecoembes.dto.AuthTokenDTO;
 import com.ecoembes.ecoembes.dto.EmployeeDataDTO;
 import com.ecoembes.ecoembes.exception.LoginException;
 import com.ecoembes.ecoembes.repository.EmployeeRepository;
@@ -25,10 +24,10 @@ public class EmployeeService {
     }
 
     /**
-     * Validates credentials and creates a new session.
-     * Token is just a timestamp for simplicity.
+     * Validates credentials and returns authenticated employee.
+     * Session token creation is handled by controller.
      */
-    public AuthTokenDTO login(String email, String password) {
+    public Employee login(String email, String password) {
         System.out.println("Attempting login for email: " + email);
 
         Employee employee = employeeRepository.findByEmail(email)
@@ -39,19 +38,20 @@ public class EmployeeService {
             throw new LoginException("Invalid email or password.");
         }
 
-        EmployeeDataDTO employeeData = new EmployeeDataDTO(
-                employee.getEmployeeId(),
-                employee.getName(),
-                employee.getEmail()
-        );
+        System.out.println("Login successful for " + employee.getName());
+        return employee;
+    }
 
+    /**
+     * Creates a session token for employee session data.
+     */
+    public String createSessionToken(EmployeeDataDTO employeeData) {
         long timestamp = Instant.now().toEpochMilli();
         String token = String.valueOf(timestamp);
 
         sessionManager.storeToken(token, employeeData);
-
-        System.out.println("Login successful for " + employeeData.name() + ". Token created: " + token);
-        return new AuthTokenDTO(token, timestamp);
+        System.out.println("Token created: " + token + " for employee: " + employeeData.email());
+        return token;
     }
 
     /**

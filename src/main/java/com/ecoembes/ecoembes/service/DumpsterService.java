@@ -2,8 +2,6 @@ package com.ecoembes.ecoembes.service;
 
 import com.ecoembes.ecoembes.domain.Dumpster;
 import com.ecoembes.ecoembes.domain.Usage;
-import com.ecoembes.ecoembes.dto.DumpsterStatusDTO;
-import com.ecoembes.ecoembes.dto.DumpsterUsageDTO;
 import com.ecoembes.ecoembes.repository.DumpsterRepository;
 import com.ecoembes.ecoembes.repository.UsageRepository;
 import org.springframework.stereotype.Service;
@@ -12,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Handles dumpster-related operations.
@@ -33,7 +30,7 @@ public class DumpsterService {
      * Creates a new dumpster with generated ID.
      */
     @Transactional
-    public DumpsterStatusDTO createNewDumpster(String location, Double capacity) {
+    public Dumpster createNewDumpster(String location, Double capacity) {
         String newId = "D-" + UUID.randomUUID().toString().substring(0, 8);
         String postalCode = extractPostalCode(location);
 
@@ -42,12 +39,7 @@ public class DumpsterService {
 
         System.out.println("Created dumpster: " + newId + " at " + location + " with capacity " + capacity);
 
-        return new DumpsterStatusDTO(
-                dumpster.getDumpsterId(),
-                dumpster.getLocation(),
-                dumpster.getFillLevel(),
-                dumpster.getContainersNumber()
-        );
+        return dumpster;
     }
 
     /**
@@ -55,7 +47,7 @@ public class DumpsterService {
      * Filters by postal code and date.
      */
     @Transactional(readOnly = true)
-    public List<DumpsterStatusDTO> getDumpsterStatus(String postalCode, LocalDate date) {
+    public List<Dumpster> getDumpsterStatus(String postalCode, LocalDate date) {
         System.out.println("=== GET DUMPSTER STATUS ===");
         System.out.println("Postal code filter: " + postalCode);
         System.out.println("Date filter: " + date);
@@ -67,47 +59,29 @@ public class DumpsterService {
             dumpsters = dumpsterRepository.findAll();
         }
 
-        List<DumpsterStatusDTO> result = dumpsters.stream()
-                .map(d -> new DumpsterStatusDTO(
-                        d.getDumpsterId(),
-                        d.getLocation(),
-                        d.getFillLevel(),
-                        d.getContainersNumber()
-                ))
-                .collect(Collectors.toList());
-
-        System.out.println("Returning " + result.size() + " dumpsters");
-        return result;
+        System.out.println("Returning " + dumpsters.size() + " dumpsters");
+        return dumpsters;
     }
 
     /**
      * Queries usage history for dumpsters within a date range.
      */
     @Transactional(readOnly = true)
-    public List<DumpsterUsageDTO> queryDumpsterUsage(LocalDate startDate, LocalDate endDate) {
+    public List<Usage> queryDumpsterUsage(LocalDate startDate, LocalDate endDate) {
         System.out.println("=== QUERY DUMPSTER USAGE ===");
         System.out.println("Date range: " + startDate + " to " + endDate);
 
         List<Usage> usages = usageRepository.findByDateBetween(startDate, endDate);
 
-        List<DumpsterUsageDTO> result = usages.stream()
-                .map(u -> new DumpsterUsageDTO(
-                        u.getDumpster().getDumpsterId(),
-                        u.getDate(),
-                        u.getFillLevel(),
-                        u.getContainersCount()
-                ))
-                .collect(Collectors.toList());
-
-        System.out.println("Found " + result.size() + " usage records in date range");
-        return result;
+        System.out.println("Found " + usages.size() + " usage records in date range");
+        return usages;
     }
 
     /**
      * Updates dumpster status (for testing/simulation purposes)
      */
     @Transactional
-    public DumpsterStatusDTO updateDumpsterStatus(String dumpsterId, String fillLevel, Integer containersNumber) {
+    public Dumpster updateDumpsterStatus(String dumpsterId, String fillLevel, Integer containersNumber) {
         Dumpster dumpster = dumpsterRepository.findById(dumpsterId)
                 .orElseThrow(() -> new RuntimeException("Dumpster not found: " + dumpsterId));
 
@@ -119,12 +93,7 @@ public class DumpsterService {
 
         System.out.println("Updated dumpster " + dumpsterId + ": " + fillLevel + ", " + containersNumber + " containers");
 
-        return new DumpsterStatusDTO(
-                dumpster.getDumpsterId(),
-                dumpster.getLocation(),
-                dumpster.getFillLevel(),
-                dumpster.getContainersNumber()
-        );
+        return dumpster;
     }
 
     private String extractPostalCode(String location) {

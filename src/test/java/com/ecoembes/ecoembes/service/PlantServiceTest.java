@@ -56,12 +56,12 @@ class PlantServiceTest {
 
         when(plantRepository.findAll()).thenReturn(Arrays.asList(p1, p2));
 
-        List<PlantCapacityDTO> result = plantService.getAllPlants();
+        List<Plant> result = plantService.getAllPlants();
 
         assertNotNull(result);
         assertEquals(2, result.size());
-        assertTrue(result.stream().allMatch(p -> p.plantID() != null));
-        assertTrue(result.stream().allMatch(p -> p.plantName() != null));
+        assertTrue(result.stream().allMatch(p -> p.getPlantId() != null));
+        assertTrue(result.stream().allMatch(p -> p.getName() != null));
         verify(plantRepository, times(1)).findAll();
     }
 
@@ -72,7 +72,7 @@ class PlantServiceTest {
 
         when(plantRepository.findAll()).thenReturn(Arrays.asList(p1, p2));
 
-        List<PlantCapacityDTO> result = plantService.getPlantCapacityByDate(LocalDate.now(), null);
+        List<Plant> result = plantService.getPlantCapacityByDate(LocalDate.now(), null);
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -86,11 +86,11 @@ class PlantServiceTest {
 
         when(plantRepository.findById("PLASSB-01")).thenReturn(Optional.of(plant));
 
-        List<PlantCapacityDTO> result = plantService.getPlantCapacityByDate(LocalDate.now(), "PLASSB-01");
+        List<Plant> result = plantService.getPlantCapacityByDate(LocalDate.now(), "PLASSB-01");
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals("PLASSB-01", result.get(0).plantID());
+        assertEquals("PLASSB-01", result.get(0).getPlantId());
         verify(plantRepository, times(1)).findById("PLASSB-01");
         verify(plantRepository, never()).findAll();
     }
@@ -127,21 +127,28 @@ class PlantServiceTest {
         Employee employee = new Employee("E001", "Admin User", "admin@ecoembes.com", "password123");
         Plant plant = new Plant("PLASSB-01", "PlasSB Ltd.", 150.0, "PLASTIC", "PlasSB");
         Dumpster d1 = new Dumpster("D-1", "Location 1", "48001", 100.0);
+        d1.updateStatus("green", 50);
         Dumpster d2 = new Dumpster("D-2", "Location 2", "48001", 200.0);
+        d2.updateStatus("orange", 100);
 
         when(employeeRepository.findById("E001")).thenReturn(Optional.of(employee));
         when(plantRepository.findById("PLASSB-01")).thenReturn(Optional.of(plant));
         when(dumpsterRepository.findById("D-1")).thenReturn(Optional.of(d1));
         when(dumpsterRepository.findById("D-2")).thenReturn(Optional.of(d2));
-        when(assignmentRepository.save(any(Assignment.class))).thenReturn(null);
+        when(assignmentRepository.save(any(Assignment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(plantRepository.save(any(Plant.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        AssignmentResponseDTO response = plantService.assignDumpsters("E001", "PLASSB-01", List.of("D-1", "D-2"));
+        List<Assignment> assignments = plantService.assignDumpsters("E001", "PLASSB-01", List.of("D-1", "D-2"));
 
-        assertNotNull(response);
-        assertEquals("E001", response.employeeId());
-        assertEquals("PLASSB-01", response.plantId());
-        assertEquals(2, response.dumpsterIds().size());
-        assertEquals("PENDING", response.status());
+        assertNotNull(assignments);
+        assertEquals(2, assignments.size());
+        assertEquals("E001", assignments.get(0).getEmployee().getEmployeeId());
+        assertEquals("PLASSB-01", assignments.get(0).getPlant().getPlantId());
+        assertEquals("PENDING", assignments.get(0).getStatus());
+        assertEquals(50, assignments.get(0).getAssignedContainers());
+        assertEquals(100, assignments.get(1).getAssignedContainers());
+        assertEquals(150, plant.getTotalContainersReceived()); // 50 + 100
         verify(assignmentRepository, times(2)).save(any(Assignment.class));
+        verify(plantRepository, times(1)).save(plant);
     }
 }
