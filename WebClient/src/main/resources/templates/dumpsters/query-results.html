@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dumpster Usage Results - Ecoembes</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="navbar">
+        <div class="container">
+            <h1>🌱 Ecoembes</h1>
+            <nav>
+                <a th:href="@{/home}">Home</a>
+                <a th:href="@{/logout}" class="logout-btn">Logout</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Dumpster Usage Results</h2>
+
+            <div class="alert alert-info">
+                <p>Query Period: <span th:text="${startDate}"></span> to <span th:text="${endDate}"></span></p>
+            </div>
+
+            <div th:if="${usageData != null and !usageData.isEmpty()}">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Dumpster ID</th>
+                            <th>Date</th>
+                            <th>Fill Level</th>
+                            <th>Containers Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="usage : ${usageData}">
+                            <td th:text="${usage['dumpsterID']}"></td>
+                            <td th:text="${usage['date']}"></td>
+                            <td>
+                                <span th:text="${usage['fillLevel']}"
+                                      th:style="'color: ' + ${usage['fillLevel'] == 'green' ? 'green' : (usage['fillLevel'] == 'orange' ? 'orange' : 'red')} + '; font-weight: bold;'">
+                                </span>
+                            </td>
+                            <td th:text="${usage['containersCount']}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:if="${usageData == null or usageData.isEmpty()}" class="alert alert-info">
+                <p>No usage data found for the specified period.</p>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <a th:href="@{/dumpsters/query}" class="btn btn-primary">New Query</a>
+                <a th:href="@{/home}" class="btn btn-secondary">Back to Home</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

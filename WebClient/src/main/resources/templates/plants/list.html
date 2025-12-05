@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Plants - Ecoembes</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="navbar">
+        <div class="container">
+            <h1>🌱 Ecoembes</h1>
+            <nav>
+                <a th:href="@{/home}">Home</a>
+                <a th:href="@{/logout}" class="logout-btn">Logout</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>All Recycling Plants</h2>
+
+            <div th:if="${error}" class="alert alert-error">
+                <p th:text="${error}"></p>
+            </div>
+
+            <div th:if="${plants != null and !plants.isEmpty()}">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Plant ID</th>
+                            <th>Plant Name</th>
+                            <th>Available Capacity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="plant : ${plants}">
+                            <td th:text="${plant['plantID']}"></td>
+                            <td th:text="${plant['plantName']}"></td>
+                            <td th:text="${plant['availableCapacityTons'] + ' tons'}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:if="${plants == null or plants.isEmpty()}" class="alert alert-info">
+                <p>No plants found in the system.</p>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <a th:href="@{/home}" class="btn btn-secondary">Back to Home</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -68,14 +68,7 @@ public class EcoembesControler {
     public ResponseEntity<AuthTokenDTO> login(@Valid @RequestBody LoginCredentialDTO credentials) {
         com.ecoembes.ecoembes.domain.Employee employee = employeeService.login(credentials.email(), credentials.password());
 
-        // Controller creates DTO from domain entity
-        EmployeeDataDTO employeeData = new EmployeeDataDTO(
-                employee.getEmployeeId(),
-                employee.getName(),
-                employee.getEmail()
-        );
-
-        String token = employeeService.createSessionToken(employeeData);
+        String token = employeeService.createSessionToken(employee);
         long timestamp = Long.parseLong(token);
         AuthTokenDTO authToken = new AuthTokenDTO(token, timestamp);
         return ResponseEntity.ok(authToken);

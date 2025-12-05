@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Dumpster - Ecoembes</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="navbar">
+        <div class="container">
+            <h1>🌱 Ecoembes</h1>
+            <nav>
+                <a th:href="@{/home}">Home</a>
+                <a th:href="@{/logout}" class="logout-btn">Logout</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Create New Dumpster</h2>
+
+            <div th:if="${error}" class="alert alert-error">
+                <p th:text="${error}"></p>
+            </div>
+
+            <form method="post" th:action="@{/dumpsters/create}">
+                <div class="form-group">
+                    <label for="location">Location:</label>
+                    <input type="text" id="location" name="location" required
+                           placeholder="e.g., Bilbao, Livensa Living, 48007">
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Enter complete location information (city, address, postal code)
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="initialCapacity">Initial Capacity (kg):</label>
+                    <input type="number" id="initialCapacity" name="initialCapacity" step="0.01" required
+                           placeholder="e.g., 5000.0">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Create Dumpster</button>
+                <a th:href="@{/home}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+

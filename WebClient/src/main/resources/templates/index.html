@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Ecoembes</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="navbar">
+        <div class="container">
+            <h1>🌱 Ecoembes Management System</h1>
+            <a th:href="@{/logout}" class="logout-btn">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Welcome to Ecoembes Dashboard</h2>
+            <p>Select an option below to manage dumpsters, plants, and assignments.</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Dumpsters Section -->
+            <a th:href="@{/dumpsters/create}" class="dashboard-card">
+                <h3>🗑️ Create Dumpster</h3>
+                <p>Register a new dumpster in the system</p>
+            </a>
+
+            <a th:href="@{/dumpsters/query}" class="dashboard-card">
+                <h3>📊 Query Dumpster Usage</h3>
+                <p>View dumpster usage statistics</p>
+            </a>
+
+            <a th:href="@{/dumpsters/status}" class="dashboard-card">
+                <h3>🔍 Check Dumpster Status</h3>
+                <p>Check current status of dumpsters</p>
+            </a>
+
+            <!-- Plants Section -->
+            <a th:href="@{/plants}" class="dashboard-card">
+                <h3>🏭 View All Plants</h3>
+                <p>See all recycling plants</p>
+            </a>
+
+            <a th:href="@{/plants/capacity}" class="dashboard-card">
+                <h3>📈 Check Plant Capacity</h3>
+                <p>View available capacity at plants</p>
+            </a>
+
+            <!-- Assignments Section -->
+            <a th:href="@{/assignments/create}" class="dashboard-card">
+                <h3>✅ Assign Dumpsters</h3>
+                <p>Assign dumpsters to recycling plants</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -45,12 +45,18 @@ public class EmployeeService {
     /**
      * Creates a session token for employee session data.
      */
-    public String createSessionToken(EmployeeDataDTO employeeData) {
+    public String createSessionToken(Employee employee) {
+        EmployeeDataDTO employeeData = new EmployeeDataDTO(
+                employee.getEmployeeId(),
+                employee.getName(),
+                employee.getEmail()
+        );
+
         long timestamp = Instant.now().toEpochMilli();
         String token = String.valueOf(timestamp);
 
         sessionManager.storeToken(token, employeeData);
-        System.out.println("Token created: " + token + " for employee: " + employeeData.email());
+        System.out.println("Token created: " + token + " for employee: " + employee.getEmail());
         return token;
     }
 

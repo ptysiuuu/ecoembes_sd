@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Created - Ecoembes</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="navbar">
+        <div class="container">
+            <h1>🌱 Ecoembes</h1>
+            <nav>
+                <a th:href="@{/home}">Home</a>
+                <a th:href="@{/logout}" class="logout-btn">Logout</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>✅ Assignment Created Successfully!</h2>
+
+            <div class="alert alert-success">
+                <p th:text="${success}"></p>
+            </div>
+
+            <div th:if="${assignment}">
+                <h3>Assignment Details:</h3>
+                <table>
+                    <tr>
+                        <th>Property</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Employee ID:</strong></td>
+                        <td th:text="${assignment['employeeId']}"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Employee Name:</strong></td>
+                        <td th:text="${assignment['employeeName']}"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Plant ID:</strong></td>
+                        <td th:text="${assignment['plantId']}"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Assigned Dumpsters:</strong></td>
+                        <td th:text="${assignment['dumpsterIds']}"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Assignment Date:</strong></td>
+                        <td th:text="${assignment['assignmentDate']}"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status:</strong></td>
+                        <td th:text="${assignment['status']}"></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <a th:href="@{/assignments/create}" class="btn btn-primary">Create Another Assignment</a>
+                <a th:href="@{/home}" class="btn btn-secondary">Back to Home</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

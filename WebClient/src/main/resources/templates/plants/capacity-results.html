@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Capacity Results - Ecoembes</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="navbar">
+        <div class="container">
+            <h1>🌱 Ecoembes</h1>
+            <nav>
+                <a th:href="@{/home}">Home</a>
+                <a th:href="@{/logout}" class="logout-btn">Logout</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Plant Capacity Results</h2>
+
+            <div class="alert alert-info">
+                <p>Date: <strong th:text="${date}"></strong>
+                <span th:if="${plantId != null and !plantId.isEmpty()}">
+                    | Plant: <strong th:text="${plantId}"></strong>
+                </span>
+                </p>
+            </div>
+
+            <div th:if="${capacities != null and !capacities.isEmpty()}">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Plant ID</th>
+                            <th>Plant Name</th>
+                            <th>Available Capacity</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="capacity : ${capacities}">
+                            <td th:text="${capacity['plantID']}"></td>
+                            <td th:text="${capacity['plantName']}"></td>
+                            <td th:text="${capacity['availableCapacityTons'] + ' tons'}"></td>
+                            <td>
+                                <span th:if="${capacity['availableCapacityTons'] > 50}" style="color: green; font-weight: bold;">✓ Available</span>
+                                <span th:if="${capacity['availableCapacityTons'] <= 50 and capacity['availableCapacityTons'] > 10}" style="color: orange; font-weight: bold;">⚠ Limited</span>
+                                <span th:if="${capacity['availableCapacityTons'] <= 10}" style="color: red; font-weight: bold;">✗ Full</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:if="${capacities == null or capacities.isEmpty()}" class="alert alert-info">
+                <p>No capacity data found for the specified date.</p>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <a th:href="@{/plants/capacity}" class="btn btn-primary">New Query</a>
+                <a th:href="@{/home}" class="btn btn-secondary">Back to Home</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

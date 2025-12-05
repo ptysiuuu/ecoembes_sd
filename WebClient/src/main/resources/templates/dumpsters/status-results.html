@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dumpster Status Results - Ecoembes</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="navbar">
+        <div class="container">
+            <h1>🌱 Ecoembes</h1>
+            <nav>
+                <a th:href="@{/home}">Home</a>
+                <a th:href="@{/logout}" class="logout-btn">Logout</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Dumpster Status Results</h2>
+
+            <div class="alert alert-info">
+                <p>Postal Code: <strong th:text="${postalCode}"></strong> | Date: <strong th:text="${date}"></strong></p>
+            </div>
+
+            <div th:if="${statusData != null and !statusData.isEmpty()}">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Dumpster ID</th>
+                            <th>Location</th>
+                            <th>Fill Level</th>
+                            <th>Containers Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="status : ${statusData}">
+                            <td th:text="${status['dumpsterID']}"></td>
+                            <td th:text="${status['location']}"></td>
+                            <td>
+                                <span th:text="${status['fillLevel']}"
+                                      th:style="'color: ' + ${status['fillLevel'] == 'green' ? 'green' : (status['fillLevel'] == 'orange' ? 'orange' : 'red')} + '; font-weight: bold;'">
+                                </span>
+                            </td>
+                            <td th:text="${status['containersNumber']}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:if="${statusData == null or statusData.isEmpty()}" class="alert alert-info">
+                <p>No dumpsters found for the specified postal code and date.</p>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <a th:href="@{/dumpsters/status}" class="btn btn-primary">New Query</a>
+                <a th:href="@{/home}" class="btn btn-secondary">Back to Home</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

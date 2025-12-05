@@ -1,3 +1,11 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
 rootProject.name = 'ecoembes-server'
 include 'PlasSB-server'
 include 'ContSocket-server'
+include 'WebClient'
