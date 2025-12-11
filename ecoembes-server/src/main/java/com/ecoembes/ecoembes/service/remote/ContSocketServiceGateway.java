@@ -25,15 +25,15 @@ public class ContSocketServiceGateway implements ServiceGateway {
 
     @Override
     public Double getPlantCapacity(Plant plant, LocalDate date) throws Exception {
-        // Plant object already resolved by factory, contains all connection details
-        // Gateway selected based on plant's gatewayType, so plantId is used from the object
+        // Plant ID is used only to select correct gateway via factory
+        // Each plant server manages only one plant, so no ID in socket command
         try (
             Socket socket = socketFactory.createSocket(plant.getHost(), plant.getPort());
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         ) {
             String formattedDate = date != null ? date.format(DateTimeFormatter.ISO_DATE) : "";
-            out.println("GET_CAPACITY " + plant.getPlantId() + (formattedDate.isEmpty() ? "" : " " + formattedDate));
+            out.println("GET_CAPACITY" + (formattedDate.isEmpty() ? "" : " " + formattedDate));
             String response = in.readLine();
             if (response != null && !response.startsWith("ERROR")) {
                 return Double.parseDouble(response);
@@ -44,14 +44,16 @@ public class ContSocketServiceGateway implements ServiceGateway {
 
     @Override
     public void notifyIncomingDumpsters(Plant plant, java.util.List<String> dumpsterIds, Integer totalContainers, LocalDate arrivalDate) throws Exception {
+        // Plant ID is used only to select correct gateway via factory
+        // Each plant server manages only one plant, so no ID in socket command
         try (
             Socket socket = socketFactory.createSocket(plant.getHost(), plant.getPort());
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         ) {
             String formattedDate = arrivalDate != null ? arrivalDate.format(DateTimeFormatter.ISO_DATE) : "";
-            // Format: NOTIFY <plantId> <numDumpsters> <totalContainers> <date>
-            out.println("NOTIFY " + plant.getPlantId() + " " + dumpsterIds.size() + " " + totalContainers + " " + formattedDate);
+            // Format: NOTIFY <numDumpsters> <totalContainers> <date>
+            out.println("NOTIFY " + dumpsterIds.size() + " " + totalContainers + " " + formattedDate);
             String response = in.readLine();
             if (response != null && response.startsWith("ERROR")) {
                 throw new Exception("Error notifying plant: " + response);

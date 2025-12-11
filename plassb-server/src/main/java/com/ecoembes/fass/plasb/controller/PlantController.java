@@ -7,7 +7,6 @@ import com.ecoembes.fass.plasb.service.PlantService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/plants")
@@ -19,26 +18,22 @@ public class PlantController {
         this.plantService = plantService;
     }
 
-    @GetMapping("/{id}/capacity")
-    public ResponseEntity<PlantCapacityDTO> getPlantCapacity(@PathVariable String id) {
-        Optional<Plant> plant = plantService.getPlantById(id);
-        return plant.map(p -> ResponseEntity.ok(new PlantCapacityDTO(p.getId(), p.getCapacity())))
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping("/capacity")
+    public ResponseEntity<PlantCapacityDTO> getPlantCapacity() {
+        // Each plant server manages only one plant, so no ID needed in URL
+        Plant plant = plantService.getPlant();
+        return ResponseEntity.ok(new PlantCapacityDTO(plant.getId(), plant.getCapacity()));
     }
 
-    @PostMapping("/{id}/notify")
+    @PostMapping("/notify")
     public ResponseEntity<String> notifyIncomingDumpsters(
-            @PathVariable String id,
             @RequestBody DumpsterNotificationDTO notification) {
-        System.out.println("Received notification for plant " + id);
+        // Each plant server manages only one plant, so no ID needed in URL
+        System.out.println("Received notification for plant " + plantService.getPlantId());
         System.out.println("Incoming dumpsters: " + notification.dumpsterIds());
         System.out.println("Total containers: " + notification.totalContainers());
         System.out.println("Expected arrival: " + notification.arrivalDate());
 
-        Optional<Plant> plant = plantService.getPlantById(id);
-        if (plant.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
 
         // Log notification (in a real system, this would update scheduling/capacity planning)
         return ResponseEntity.ok("Notification received for " + notification.dumpsterIds().size() + " dumpsters");

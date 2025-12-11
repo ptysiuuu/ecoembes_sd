@@ -46,30 +46,23 @@ public class ContSocketServer {
                 String inputLine;
                 while ((inputLine = in.readLine()) != null) {
                     String[] tokens = inputLine.split(" ");
-                    if (tokens.length == 2 && tokens[0].equals("GET_CAPACITY")) {
-                        String plantId = tokens[1];
-                        Double capacity = plantCapacities.get(plantId);
-                        if (capacity != null) {
-                            out.println(capacity);
-                        } else {
-                            out.println("ERROR: Plant not found");
-                        }
-                    } else if (tokens.length >= 4 && tokens[0].equals("NOTIFY")) {
-                        // Format: NOTIFY <plantId> <numDumpsters> <totalContainers> <date>
-                        String plantId = tokens[1];
-                        String numDumpsters = tokens[2];
-                        String totalContainers = tokens[3];
-                        String date = tokens.length > 4 ? tokens[4] : "unknown";
+                    if (tokens.length >= 1 && tokens[0].equals("GET_CAPACITY")) {
+                        // Each server manages one plant, no plantId needed
+                        // Optional date parameter: GET_CAPACITY [date]
+                        // For now, return default capacity (could be extended to handle date)
+                        out.println(plantCapacities.values().stream().findFirst().orElse(0.0));
+                    } else if (tokens.length >= 3 && tokens[0].equals("NOTIFY")) {
+                        // Format: NOTIFY <numDumpsters> <totalContainers> <date>
+                        // Each server manages one plant, no plantId needed
+                        String numDumpsters = tokens[1];
+                        String totalContainers = tokens[2];
+                        String date = tokens.length > 3 ? tokens[3] : "unknown";
 
-                        if (plantCapacities.containsKey(plantId)) {
-                            System.out.println("Notification received for plant " + plantId);
-                            System.out.println("Incoming dumpsters: " + numDumpsters);
-                            System.out.println("Total containers: " + totalContainers);
-                            System.out.println("Expected arrival: " + date);
-                            out.println("OK");
-                        } else {
-                            out.println("ERROR: Plant not found");
-                        }
+                        System.out.println("Notification received");
+                        System.out.println("Incoming dumpsters: " + numDumpsters);
+                        System.out.println("Total containers: " + totalContainers);
+                        System.out.println("Expected arrival: " + date);
+                        out.println("OK");
                     } else {
                         out.println("ERROR: Invalid command");
                     }

@@ -17,8 +17,11 @@ The server will start on port **9090**.
 ## Protocol
 
 The server accepts socket connections and responds to:
-- Capacity queries: `GET_CAPACITY <plantId>`
-- Notification of incoming dumpsters: `NOTIFY <plantId> <numDumpsters> <totalContainers> <arrivalDate>`
+- Capacity queries: `GET_CAPACITY [date]`
+  - Each server manages only one plant, so no plantId is needed
+  - Optional date parameter in ISO format (YYYY-MM-DD)
+- Notification of incoming dumpsters: `NOTIFY <numDumpsters> <totalContainers> <arrivalDate>`
+  - Each server manages only one plant, so no plantId is needed
   - Response: `OK` on success, `ERROR: <message>` on failure
 
 ## Testing

@@ -16,8 +16,11 @@ The server will start on port **8083**.
 
 ## API Endpoints
 
-- `GET /api/plants/{plantId}/capacity?date={date}` - Get plant capacity for a specific date
-- `POST /api/plants/{plantId}/notify` - Receive notification of incoming dumpsters
+- `GET /api/plants/capacity?date={date}` - Get plant capacity for a specific date
+  - Each server manages only one plant, so no plantId is needed in the path
+  - Optional date query parameter in ISO format (YYYY-MM-DD)
+- `POST /api/plants/notify` - Receive notification of incoming dumpsters
+  - Each server manages only one plant, so no plantId is needed in the path
   - Request body: `DumpsterNotificationDTO` with `plantId`, `dumpsterIds`, `totalContainers`, `arrivalDate`
   - Response: Confirmation message
 

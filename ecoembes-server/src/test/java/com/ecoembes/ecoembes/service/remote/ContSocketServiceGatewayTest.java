@@ -36,6 +36,7 @@ class ContSocketServiceGatewayTest {
         Double capacity = gateway.getPlantCapacity(plant, date);
 
         assertEquals(75.0, capacity);
-        assertEquals("GET_CAPACITY CONTSO-01 2025-11-05" + System.lineSeparator(), outputStream.toString());
+        // PlantId is not sent to server - each server manages only one plant
+        assertEquals("GET_CAPACITY 2025-11-05" + System.lineSeparator(), outputStream.toString());
     }
 }

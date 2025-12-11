@@ -1,12 +1,7 @@
 package com.ecoembes.fass.plasb.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-
-@Entity
 public class Plant {
 
-    @Id
     private String id;
     private Double capacity;
 
