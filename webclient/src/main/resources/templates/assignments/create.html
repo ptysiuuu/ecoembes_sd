@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assign Dumpsters - Ecoembes</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="navbar">
+        <div class="container">
+            <h1>🌱 Ecoembes</h1>
+            <nav>
+                <a th:href="@{/home}">Home</a>
+                <a th:href="@{/logout}" class="logout-btn">Logout</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Assign Dumpsters to Plant</h2>
+
+            <div th:if="${error}" class="alert alert-error">
+                <p th:text="${error}"></p>
+            </div>
+
+            <form method="post" th:action="@{/assignments/create}">
+                <div class="form-group">
+                    <label for="plantId">Select Plant:</label>
+                    <select id="plantId" name="plantId" required>
+                        <option value="">-- Select a Plant --</option>
+                        <option th:each="plant : ${plants}"
+                                th:value="${plant['plantID']}"
+                                th:text="${plant['plantID'] + ' - ' + plant['plantName'] + ' (Capacity: ' + plant['availableCapacityTons'] + ' tons)'}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="dumpsterIds">Dumpster IDs (comma-separated):</label>
+                    <input type="text" id="dumpsterIds" name="dumpsterIds" required
+                           placeholder="e.g., D-123, D-456, D-789">
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Enter multiple dumpster IDs separated by commas
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="date">Assignment Date:</label>
+                    <input type="date" id="date" name="date" required>
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Date must be today or in the future
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Create Assignment</button>
+                <a th:href="@{/home}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+

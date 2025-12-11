@@ -1,0 +1,31 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.ecoembes'
+version = '0.0.1-SNAPSHOT'
+description = 'ContSocket Recycling Plant Server'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+application {
+    mainClass = 'com.ecoembes.fass.contsocket.ContSocketServer'
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+

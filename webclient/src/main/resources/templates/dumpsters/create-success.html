@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dumpster Created - Ecoembes</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="navbar">
+        <div class="container">
+            <h1>🌱 Ecoembes</h1>
+            <nav>
+                <a th:href="@{/home}">Home</a>
+                <a th:href="@{/logout}" class="logout-btn">Logout</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>✅ Dumpster Created Successfully!</h2>
+
+            <div class="alert alert-success">
+                <p th:text="${success}"></p>
+            </div>
+
+            <div th:if="${dumpster}">
+                <h3>Dumpster Details:</h3>
+                <table>
+                    <tr>
+                        <th>Property</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Dumpster ID:</strong></td>
+                        <td th:text="${dumpster['dumpsterID']}"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Location:</strong></td>
+                        <td th:text="${dumpster['location']}"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Fill Level:</strong></td>
+                        <td th:text="${dumpster['fillLevel']}"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Containers Count:</strong></td>
+                        <td th:text="${dumpster['containersNumber']}"></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <a th:href="@{/dumpsters/create}" class="btn btn-primary">Create Another</a>
+                <a th:href="@{/home}" class="btn btn-secondary">Back to Home</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

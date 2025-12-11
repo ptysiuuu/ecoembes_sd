@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="ecoembes-server" options="-parameters" />
+      <module name="ecoembes-server.main" options="-parameters" />
+      <module name="ecoembes-server.test" options="-parameters" />
+      <module name="plassb-server" options="-parameters" />
+      <module name="plassb-server.main" options="-parameters" />
+      <module name="plassb-server.test" options="-parameters" />
+      <module name="webclient" options="-parameters" />
+      <module name="webclient.main" options="-parameters" />
+      <module name="webclient.test" options="-parameters" />
+    </option>
+  </component>
+</project>
