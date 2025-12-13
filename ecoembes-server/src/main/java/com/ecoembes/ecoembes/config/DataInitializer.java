@@ -49,12 +49,12 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initializePlants() {
-        Plant plassb = new Plant("PLASSB-01", "PlasSB Ltd.", 150.0, "PLASTIC", "PlasSB");
+        Plant plassb = new Plant("PLASSB-01", "PlasSB Ltd.", 85.0, "PLASTIC", "PlasSB");
         plassb.setHost("localhost");
-        plassb.setPort(8080);
+        plassb.setPort(8083);
         Plant contsocket = new Plant("CONTSO-01", "ContSocket Ltd.", 80.5, "GENERAL", "ContSocket");
         contsocket.setHost("localhost");
-        contsocket.setPort(4444);
+        contsocket.setPort(9090);
 
         plantRepository.save(plassb);
         plantRepository.save(contsocket);

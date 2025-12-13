@@ -6,21 +6,25 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ContSocketServer {
 
-    private static final Map<String, Double> plantCapacities = new HashMap<>();
+    private static final String PLANT_ID = "CONTSO-01";
+    private static final Double BASE_CAPACITY = 80.5; // tons
+
+    // Track assigned containers per date
+    private static final Map<LocalDate, Integer> assignedContainersByDate = new HashMap<>();
 
     public static void main(String[] args) throws IOException {
-        plantCapacities.put("CONTSO-01", 75.0);
-        plantCapacities.put("CONTSO-02", 90.0);
-
-        int portNumber = 4444;
+        int portNumber = 9090;
 
         try (ServerSocket serverSocket = new ServerSocket(portNumber)) {
-            System.out.println("ContSocketServer listening on port " + portNumber);
+            System.out.println("ContSocketServer (" + PLANT_ID + ") listening on port " + portNumber);
+            System.out.println("Base capacity: " + BASE_CAPACITY + " tons");
             while (true) {
                 new ContSocketThread(serverSocket.accept()).start();
             }
@@ -28,6 +32,24 @@ public class ContSocketServer {
             System.err.println("Could not listen on port " + portNumber);
             System.exit(-1);
         }
+    }
+
+    private static synchronized double getAvailableCapacity(LocalDate date) {
+        LocalDate effectiveDate = date != null ? date : LocalDate.now();
+        int assignedContainers = assignedContainersByDate.getOrDefault(effectiveDate, 0);
+        // Assume 1000 containers = 1 ton (adjust ratio as needed)
+        double usedCapacity = assignedContainers / 1000.0;
+        double availableCapacity = BASE_CAPACITY - usedCapacity;
+        return Math.max(0.0, availableCapacity); // Never return negative capacity
+    }
+
+    private static synchronized void addIncomingDumpsters(int totalContainers, LocalDate arrivalDate) {
+        LocalDate date = arrivalDate != null ? arrivalDate : LocalDate.now();
+        int currentAssigned = assignedContainersByDate.getOrDefault(date, 0);
+        assignedContainersByDate.put(date, currentAssigned + totalContainers);
+        System.out.println("Added " + totalContainers + " containers for date " + date);
+        System.out.println("Total assigned for " + date + ": " + assignedContainersByDate.get(date));
+        System.out.println("Available capacity for " + date + ": " + getAvailableCapacity(date) + " tons");
     }
 
     private static class ContSocketThread extends Thread {
@@ -49,20 +71,43 @@ public class ContSocketServer {
                     if (tokens.length >= 1 && tokens[0].equals("GET_CAPACITY")) {
                         // Each server manages one plant, no plantId needed
                         // Optional date parameter: GET_CAPACITY [date]
-                        // For now, return default capacity (could be extended to handle date)
-                        out.println(plantCapacities.values().stream().findFirst().orElse(0.0));
+                        LocalDate date = null;
+                        if (tokens.length > 1) {
+                            try {
+                                date = LocalDate.parse(tokens[1], DateTimeFormatter.ISO_DATE);
+                            } catch (Exception e) {
+                                System.err.println("Invalid date format: " + tokens[1]);
+                            }
+                        }
+                        double capacity = getAvailableCapacity(date);
+                        out.println(capacity);
                     } else if (tokens.length >= 3 && tokens[0].equals("NOTIFY")) {
                         // Format: NOTIFY <numDumpsters> <totalContainers> <date>
                         // Each server manages one plant, no plantId needed
-                        String numDumpsters = tokens[1];
-                        String totalContainers = tokens[2];
-                        String date = tokens.length > 3 ? tokens[3] : "unknown";
+                        try {
+                            String numDumpsters = tokens[1];
+                            int totalContainers = Integer.parseInt(tokens[2]);
+                            LocalDate date = null;
+                            if (tokens.length > 3) {
+                                try {
+                                    date = LocalDate.parse(tokens[3], DateTimeFormatter.ISO_DATE);
+                                } catch (Exception e) {
+                                    System.err.println("Invalid date format: " + tokens[3]);
+                                    date = LocalDate.now();
+                                }
+                            }
 
-                        System.out.println("Notification received");
-                        System.out.println("Incoming dumpsters: " + numDumpsters);
-                        System.out.println("Total containers: " + totalContainers);
-                        System.out.println("Expected arrival: " + date);
-                        out.println("OK");
+                            System.out.println("Notification received");
+                            System.out.println("Incoming dumpsters: " + numDumpsters);
+                            System.out.println("Total containers: " + totalContainers);
+                            System.out.println("Expected arrival: " + (date != null ? date : "today"));
+
+                            addIncomingDumpsters(totalContainers, date);
+
+                            out.println("OK");
+                        } catch (NumberFormatException e) {
+                            out.println("ERROR: Invalid number format");
+                        }
                     } else {
                         out.println("ERROR: Invalid command");
                     }
