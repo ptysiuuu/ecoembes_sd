@@ -74,7 +74,7 @@ public class PlantService {
     }
 
     @Transactional
-    public List<Assignment> assignDumpsters(String employeeId, String plantId, List<String> dumpsterIds) {
+    public List<Assignment> assignDumpsters(String employeeId, String plantId, List<String> dumpsterIds, LocalDate assignmentDate) {
         System.out.println("--- DUMPSTER ASSIGNMENT ---");
         System.out.println("Employee '" + employeeId + "' assigning " + dumpsterIds.size() + " dumpsters to plant '" + plantId + "'.");
 
@@ -84,7 +84,9 @@ public class PlantService {
         Plant plant = plantRepository.findById(plantId)
                 .orElseThrow(() -> new RuntimeException("Plant not found: " + plantId));
 
-        LocalDate assignmentDate = LocalDate.now();
+        LocalDate effectiveDate = assignmentDate != null ? assignmentDate : LocalDate.now();
+        System.out.println("Assignment date: " + effectiveDate);
+
         List<Assignment> assignments = new ArrayList<>();
         int totalContainers = 0;
 
@@ -93,7 +95,7 @@ public class PlantService {
                     .orElseThrow(() -> new RuntimeException("Dumpster not found: " + dumpsterId));
 
             int containersAtAssignment = dumpster.getContainersNumber();
-            Assignment assignment = new Assignment(plant, dumpster, employee, assignmentDate, containersAtAssignment);
+            Assignment assignment = new Assignment(plant, dumpster, employee, effectiveDate, containersAtAssignment);
             assignment = assignmentRepository.save(assignment);
             assignments.add(assignment);
             totalContainers += containersAtAssignment;
@@ -111,8 +113,8 @@ public class PlantService {
         // Notify the plant of incoming dumpsters
         try {
             ServiceGateway serviceGateway = serviceGatewayFactory.getServiceGateway(plant.getGatewayType());
-            serviceGateway.notifyIncomingDumpsters(plant, dumpsterIds, totalContainers, assignmentDate);
-            System.out.println("Plant notified successfully of incoming dumpsters.");
+            serviceGateway.notifyIncomingDumpsters(plant, dumpsterIds, totalContainers, effectiveDate);
+            System.out.println("Plant notified successfully of incoming dumpsters for date: " + effectiveDate);
         } catch (Exception e) {
             System.err.println("Failed to notify plant: " + e.getMessage());
             // Continue execution - notification failure should not break assignment

@@ -253,7 +253,8 @@ public class EcoembesControler {
         List<com.ecoembes.ecoembes.domain.Assignment> assignments = plantService.assignDumpsters(
                 employeeData.employeeID(),
                 assignment.plantID(),
-                assignment.dumpsterIDs()
+                assignment.dumpsterIDs(),
+                assignment.date()
         );
 
         // Convert domain to DTO
