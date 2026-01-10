@@ -1,6 +1,6 @@
 package com.ecoembes.ecoembes.controler;
 
-import com.ecoembes.ecoembes.dto.EmployeeDataDTO;
+import com.ecoembes.ecoembes.domain.Employee;
 import com.ecoembes.ecoembes.service.DumpsterService;
 import com.ecoembes.ecoembes.service.EmployeeService;
 import com.ecoembes.ecoembes.service.PlantService;
@@ -42,8 +42,9 @@ class EcoembesControlerTest {
 
     @BeforeEach
     void setUp() {
+        Employee mockEmployee = new Employee("E001", "Admin User", "admin@ecoembes.com", "password123");
         when(sessionManager.validateToken(anyString())).thenReturn(true);
-        when(sessionManager.getEmployeeData(anyString())).thenReturn(new EmployeeDataDTO("E001", "Admin User", "admin@ecoembes.com"));
+        when(sessionManager.getEmployee(anyString())).thenReturn(mockEmployee);
     }
 
     @Test

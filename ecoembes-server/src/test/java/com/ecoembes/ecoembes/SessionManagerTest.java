@@ -1,6 +1,6 @@
 package com.ecoembes.ecoembes;
 
-import com.ecoembes.ecoembes.dto.EmployeeDataDTO;
+import com.ecoembes.ecoembes.domain.Employee;
 import com.ecoembes.ecoembes.statemanagement.SessionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,18 +19,18 @@ class SessionManagerTest {
     @Test
     void storeValidateAndRemoveToken() {
         String token = "123";
-        EmployeeDataDTO employee = new EmployeeDataDTO("E001", "Test User", "user@ecoembes.com");
+        Employee employee = new Employee("E001", "Test User", "user@ecoembes.com", "password123");
 
         assertFalse(sessionManager.validateToken(token));
-        assertNull(sessionManager.getEmployeeData(token));
+        assertNull(sessionManager.getEmployee(token));
 
         sessionManager.storeToken(token, employee);
         assertTrue(sessionManager.validateToken(token));
-        assertEquals(employee, sessionManager.getEmployeeData(token));
+        assertEquals(employee, sessionManager.getEmployee(token));
 
         sessionManager.removeToken(token);
         assertFalse(sessionManager.validateToken(token));
-        assertNull(sessionManager.getEmployeeData(token));
+        assertNull(sessionManager.getEmployee(token));
     }
 }
 

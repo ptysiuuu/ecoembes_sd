@@ -1,6 +1,6 @@
 package com.ecoembes.ecoembes.statemanagement;
 
-import com.ecoembes.ecoembes.dto.EmployeeDataDTO;
+import com.ecoembes.ecoembes.domain.Employee;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -14,13 +14,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class SessionManager {
 
-    private final Map<String, EmployeeDataDTO> activeSessions = new ConcurrentHashMap<>();
+    private final Map<String, Employee> activeSessions = new ConcurrentHashMap<>();
 
     /**
      * Saves a new session token with employee info.
      */
-    public void storeToken(String token, EmployeeDataDTO employee) {
-        System.out.println("Storing token for employee: " + employee.email());
+    public void storeToken(String token, Employee employee) {
+        System.out.println("Storing token for employee: " + employee.getEmail());
         activeSessions.put(token, employee);
     }
 
@@ -42,10 +42,10 @@ public class SessionManager {
     }
 
     /**
-     * Gets employee data for a valid token.
+     * Gets employee entity for a valid token.
      * Returns null if token doesn't exist.
      */
-    public EmployeeDataDTO getEmployeeData(String token) {
+    public Employee getEmployee(String token) {
         return activeSessions.get(token);
     }
 }

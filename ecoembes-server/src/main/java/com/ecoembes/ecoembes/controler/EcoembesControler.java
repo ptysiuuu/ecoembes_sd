@@ -50,11 +50,11 @@ public class EcoembesControler {
         if (!sessionManager.validateToken(token)) {
             throw new InvalidTokenException("Invalid or expired token.");
         }
-        EmployeeDataDTO employeeData = sessionManager.getEmployeeData(token);
-        if (employeeData == null) {
+        com.ecoembes.ecoembes.domain.Employee employee = sessionManager.getEmployee(token);
+        if (employee == null) {
             throw new InvalidTokenException("Token valid but no employee data found.");
         }
-        return employeeData;
+        return new EmployeeDataDTO(employee.getEmployeeId(), employee.getName(), employee.getEmail());
     }
 
     // --- Employee & Session Endpoints ---

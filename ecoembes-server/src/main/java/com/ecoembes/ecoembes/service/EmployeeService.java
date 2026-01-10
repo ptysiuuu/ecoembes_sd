@@ -1,7 +1,6 @@
 package com.ecoembes.ecoembes.service;
 
 import com.ecoembes.ecoembes.domain.Employee;
-import com.ecoembes.ecoembes.dto.EmployeeDataDTO;
 import com.ecoembes.ecoembes.exception.LoginException;
 import com.ecoembes.ecoembes.repository.EmployeeRepository;
 import com.ecoembes.ecoembes.statemanagement.SessionManager;
@@ -43,19 +42,13 @@ public class EmployeeService {
     }
 
     /**
-     * Creates a session token for employee session data.
+     * Creates a session token for employee entity.
      */
     public String createSessionToken(Employee employee) {
-        EmployeeDataDTO employeeData = new EmployeeDataDTO(
-                employee.getEmployeeId(),
-                employee.getName(),
-                employee.getEmail()
-        );
-
         long timestamp = Instant.now().toEpochMilli();
         String token = String.valueOf(timestamp);
 
-        sessionManager.storeToken(token, employeeData);
+        sessionManager.storeToken(token, employee);
         System.out.println("Token created: " + token + " for employee: " + employee.getEmail());
         return token;
     }

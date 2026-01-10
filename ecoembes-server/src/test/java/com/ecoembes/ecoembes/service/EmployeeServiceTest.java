@@ -1,7 +1,6 @@
 package com.ecoembes.ecoembes.service;
 
 import com.ecoembes.ecoembes.domain.Employee;
-import com.ecoembes.ecoembes.dto.EmployeeDataDTO;
 import com.ecoembes.ecoembes.exception.LoginException;
 import com.ecoembes.ecoembes.repository.EmployeeRepository;
 import com.ecoembes.ecoembes.statemanagement.SessionManager;
@@ -32,7 +31,7 @@ class EmployeeServiceTest {
     void loginSuccessAndTokenStored() {
         Employee employee = new Employee("E001", "Admin User", "admin@ecoembes.com", "password123");
         when(employeeRepository.findByEmail("admin@ecoembes.com")).thenReturn(Optional.of(employee));
-        doNothing().when(sessionManager).storeToken(anyString(), any(EmployeeDataDTO.class));
+        doNothing().when(sessionManager).storeToken(anyString(), any(Employee.class));
 
         Employee result = employeeService.login("admin@ecoembes.com", "password123");
 
@@ -41,15 +40,10 @@ class EmployeeServiceTest {
         assertEquals("admin@ecoembes.com", result.getEmail());
         verify(employeeRepository, times(1)).findByEmail("admin@ecoembes.com");
 
-        // Test token creation separately with DTO
-        EmployeeDataDTO employeeData = new EmployeeDataDTO(
-                result.getEmployeeId(),
-                result.getName(),
-                result.getEmail()
-        );
-        String token = employeeService.createSessionToken(employeeData);
+        // Test token creation with employee entity
+        String token = employeeService.createSessionToken(result);
         assertNotNull(token);
-        verify(sessionManager, times(1)).storeToken(anyString(), any(EmployeeDataDTO.class));
+        verify(sessionManager, times(1)).storeToken(anyString(), any(Employee.class));
     }
 
     @Test

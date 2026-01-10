@@ -138,7 +138,7 @@ class PlantServiceTest {
         when(assignmentRepository.save(any(Assignment.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(plantRepository.save(any(Plant.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        List<Assignment> assignments = plantService.assignDumpsters("E001", "PLASSB-01", List.of("D-1", "D-2"));
+        List<Assignment> assignments = plantService.assignDumpsters("E001", "PLASSB-01", List.of("D-1", "D-2"), LocalDate.now());
 
         assertNotNull(assignments);
         assertEquals(2, assignments.size());
