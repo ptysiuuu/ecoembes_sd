@@ -43,10 +43,10 @@ public class EcoembesControler {
     }
 
     /**
-     * Validates token and returns employee data if valid.
+     * Validates token and returns employee entity if valid.
      * Throws exception if token is invalid/expired.
      */
-    private EmployeeDataDTO validate(String token) {
+    private com.ecoembes.ecoembes.domain.Employee validate(String token) {
         if (!sessionManager.validateToken(token)) {
             throw new InvalidTokenException("Invalid or expired token.");
         }
@@ -54,7 +54,7 @@ public class EcoembesControler {
         if (employee == null) {
             throw new InvalidTokenException("Token valid but no employee data found.");
         }
-        return new EmployeeDataDTO(employee.getEmployeeId(), employee.getName(), employee.getEmail());
+        return employee;
     }
 
     // --- Employee & Session Endpoints ---
@@ -249,9 +249,9 @@ public class EcoembesControler {
             @Parameter(description = "Session token received at login") @RequestHeader("Authorization") String token,
             @Valid @RequestBody AssignDumpsterDTO assignment
     ) {
-        EmployeeDataDTO employeeData = validate(token);
+        com.ecoembes.ecoembes.domain.Employee employee = validate(token);
         List<com.ecoembes.ecoembes.domain.Assignment> assignments = plantService.assignDumpsters(
-                employeeData.employeeID(),
+                employee.getEmployeeId(),
                 assignment.plantID(),
                 assignment.dumpsterIDs(),
                 assignment.date()
